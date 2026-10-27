@@ -213,7 +213,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .storefront-root .storefront-drawer textarea{background:#eef3ff!important}
 .storefront-root footer{background:#f7f9ff!important}
 @media(min-width:1280px){
-  .storefront-root #products .grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .storefront-root #products > .grid{grid-template-columns:repeat(5,minmax(0,1fr))}
 }
 @media(max-width:640px){
   .storefront-root #home{padding-top:8px!important}
