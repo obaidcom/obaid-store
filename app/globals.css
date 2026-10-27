@@ -253,3 +253,26 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .storefront-root #products .group button{border-radius:9px!important}
 @media(min-width:1024px){.storefront-root #products .grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}.storefront-root #home>div{min-height:320px!important}}
 @media(max-width:640px){.storefront-root #home>div{min-height:250px!important}.storefront-root #home>div>div.flex{min-height:250px!important}.storefront-root #home h1{font-size:1.8rem!important}.storefront-root #products .group h3{font-size:11px!important}}
+
+
+/* Mobile usability pass: keep product actions visible without hover */
+@media(max-width:640px){
+  .storefront-root #products .group button.absolute{
+    opacity:1!important;
+    transform:translateY(0)!important;
+    bottom:8px!important;
+    left:8px!important;
+    right:8px!important;
+    min-height:36px;
+    border-radius:10px!important;
+    background:rgba(255,255,255,.96)!important;
+    color:#1646a8!important;
+    box-shadow:0 3px 12px rgba(15,35,75,.12);
+  }
+  .storefront-root #products .group>div:first-child{padding-bottom:42px}
+  .storefront-root #products .group>div:last-child{padding:9px!important}
+  .storefront-root #products .group p{min-height:28px}
+}
+@media(min-width:641px){
+  .storefront-root #products .group:hover button.absolute{opacity:1;transform:translateY(0)}
+}
