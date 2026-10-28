@@ -55,10 +55,13 @@ export default function AdminPage() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("obaid-store-admin-settings-v1");
-      if (stored) setSettings({ ...initialSettings, ...JSON.parse(stored) });
-    } catch {}
+    const timer = window.setTimeout(() => {
+      try {
+        const stored = localStorage.getItem("obaid-store-admin-settings-v1");
+        if (stored) setSettings({ ...initialSettings, ...JSON.parse(stored) });
+      } catch {}
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const update = <K extends keyof StoreSettings>(key: K, value: StoreSettings[K]) => {
