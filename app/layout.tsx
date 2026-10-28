@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Cairo } from "next/font/google";
-import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 const cairo = Cairo({ subsets: ["arabic", "latin"], variable: "--font-cairo", display: "swap" });
@@ -22,5 +21,5 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { themeColor: "#1646a8", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return <html lang="ar" dir="rtl" suppressHydrationWarning><body className={cairo.className}><ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>{children}</ThemeProvider></body></html>;
+  return <html lang="ar" dir="rtl"><body className={cairo.className}>{children}</body></html>;
 }
