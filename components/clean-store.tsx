@@ -44,7 +44,8 @@ export function CleanStore() {
  const [accountMode,setAccountMode] = useState<"login"|"signup">("signup");
  const [accountNotice,setAccountNotice] = useState("");
  const [sortBy,setSortBy] = useState<"featured"|"price-low"|"price-high"|"name">("featured");
- const [favoritesOnly,setFavoritesOnly] = useState(false);\n const [selectedProduct,setSelectedProduct] = useState<Product|null>(null);\n const [selectedImageIndex,setSelectedImageIndex] = useState(0);\n const [selectedQuantity,setSelectedQuantity] = useState(1);
+ const [favoritesOnly,setFavoritesOnly] = useState(false);
+ const [selectedProduct,setSelectedProduct] = useState<Product|null>(null);\n const [selectedImageIndex,setSelectedImageIndex] = useState(0);\n const [selectedQuantity,setSelectedQuantity] = useState(1);
  const [newsletterEmail,setNewsletterEmail] = useState("");
  const [newsletterNotice,setNewsletterNotice] = useState("");
  const [preferencesLoaded,setPreferencesLoaded] = useState(false);
@@ -60,7 +61,8 @@ export function CleanStore() {
  const cartItems = products.filter(p=>cart[p.id]);
  const count = Object.values(cart).reduce((a,b)=>a+b,0);
  const total = cartItems.reduce((sum,p)=>sum+p.price*cart[p.id],0);
- const add = (id:number, quantity=1) => {setCart(c=>({...c,[id]:(c[id]||0)+quantity}));setNotice("أُضيف "+quantity+" من المنتج إلى سلتك");window.setTimeout(()=>setNotice(""),2200);};\n const openProduct = (product:Product) => {setSelectedProduct(product);setSelectedImageIndex(0);setSelectedQuantity(1);};
+ const add = (id:number, quantity=1) => {setCart(c=>({...c,[id]:(c[id]||0)+quantity}));setNotice("أُضيف "+quantity+" من المنتج إلى سلتك");window.setTimeout(()=>setNotice(""),2200);};
+ const openProduct = (product:Product) => {setSelectedProduct(product);setSelectedImageIndex(0);setSelectedQuantity(1);};
  const toggleFavorite = (id:number) => setFavorites(f=>f.includes(id)?f.filter(x=>x!==id):[...f,id]);
  const scrollProducts = () => document.getElementById("products")?.scrollIntoView({behavior:"smooth"});
  return <main dir="rtl" data-theme={theme} className="store-shell min-h-screen bg-[#101a2d] text-[#e7edf8]">
