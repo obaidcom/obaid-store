@@ -1,2 +1,5 @@
-import { Storefront } from "@/components/storefront-v2";
-export default function HomePage() { return <Storefront />; }
+import { CleanStore } from "@/components/clean-store";
+
+export default function HomePage() {
+  return <CleanStore />;
+}
