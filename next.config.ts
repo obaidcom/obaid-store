@@ -1,3 +1,9 @@
 import type { NextConfig } from "next";
-const nextConfig: NextConfig = { output:"export", trailingSlash:true, images:{unoptimized:true}, basePath:process.env.NODE_ENV==="production"?"/obaid-store":"" };
+
+const nextConfig: NextConfig = {
+  // Keep the full Next.js runtime enabled for server-side authentication,
+  // protected admin routes, and server-only integrations on Vercel.
+  trailingSlash: true,
+};
+
 export default nextConfig;
