@@ -1,7 +1,5 @@
 name: Validate Next.js application
 on:
-  pull_request:
-    branches: [main]
   push:
     branches: ["rebuild/**"]
   workflow_dispatch:
