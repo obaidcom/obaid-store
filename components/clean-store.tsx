@@ -46,7 +46,8 @@ export function CleanStore() {
  const [sortBy,setSortBy] = useState<"featured"|"price-low"|"price-high"|"name">("featured");
  const [favoritesOnly,setFavoritesOnly] = useState(false);
  const [selectedProduct,setSelectedProduct] = useState<Product|null>(null);
- const [selectedImageIndex,setSelectedImageIndex] = useState(0);\n const [selectedQuantity,setSelectedQuantity] = useState(1);
+ const [selectedImageIndex,setSelectedImageIndex] = useState(0);
+ const [selectedQuantity,setSelectedQuantity] = useState(1);
  const [newsletterEmail,setNewsletterEmail] = useState("");
  const [newsletterNotice,setNewsletterNotice] = useState("");
  const [preferencesLoaded,setPreferencesLoaded] = useState(false);
