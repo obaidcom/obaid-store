@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, BadgeCheck, Heart, Menu, PackageCheck, Search, ShieldCheck, ShoppingBag, Sparkles, Star, Truck, UserRound, X } from "lucide-react";
 
 const products=[
@@ -16,7 +16,20 @@ const products=[
 const categories=[{name:"إلكترونيات",emoji:"🎧",color:"from-blue-100 to-sky-50"},{name:"أزياء",emoji:"👟",color:"from-violet-100 to-purple-50"},{name:"المنزل",emoji:"🏡",color:"from-amber-100 to-orange-50"},{name:"العناية",emoji:"✨",color:"from-rose-100 to-pink-50"}];
 const money=(v:number)=>new Intl.NumberFormat("ar-SY",{maximumFractionDigits:0}).format(v)+" ل.س";
 export default function Storefront(){
-const [query,setQuery]=useState(""),[category,setCategory]=useState("الكل"),[favorites,setFavorites]=useState<string[]>([]),[cart,setCart]=useState<Record<string,number>>({}),[menu,setMenu]=useState(false),[cartOpen,setCartOpen]=useState(false);
+const [query,setQuery]=useState(""),[category,setCategory]=useState("الكل"),[favorites,setFavorites]=useState<string[]>([]),[cart,setCart]=useState<Record<string,number>>({}),[menu,setMenu]=useState(false),[cartOpen,setCartOpen]=useState(false),[storageReady,setStorageReady]=useState(false);
+useEffect(()=>{
+ try {
+  const savedCart=window.localStorage.getItem("obaid-store-cart");
+  const savedFavorites=window.localStorage.getItem("obaid-store-favorites");
+  if(savedCart){const parsed=JSON.parse(savedCart);if(parsed&&typeof parsed==="object"&&!Array.isArray(parsed))setCart(parsed);}
+  if(savedFavorites){const parsed=JSON.parse(savedFavorites);if(Array.isArray(parsed)&&parsed.every(x=>typeof x==="string"))setFavorites(parsed);}
+ } catch { /* Ignore invalid local demo data. */ }
+ setStorageReady(true);
+},[]);
+useEffect(()=>{
+ if(!storageReady)return;
+ try {window.localStorage.setItem("obaid-store-cart",JSON.stringify(cart));window.localStorage.setItem("obaid-store-favorites",JSON.stringify(favorites));} catch { /* Storage may be unavailable. */ }
+},[cart,favorites,storageReady]);
 const visible=useMemo(()=>products.filter(p=>(category==="الكل"||p.category===category)&&p.name.includes(query.trim())),[category,query]);
 const count=Object.values(cart).reduce((a,b)=>a+b,0);
 return <main className="pb-12">
