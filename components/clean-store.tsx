@@ -37,14 +37,15 @@ export function CleanStore() {
  const [favoritesOnly,setFavoritesOnly] = useState(false);
  const [newsletterEmail,setNewsletterEmail] = useState("");
  const [newsletterNotice,setNewsletterNotice] = useState("");
+ const [preferencesLoaded,setPreferencesLoaded] = useState(false);
  const slides = [
   {eyebrow:"اختيارات هذا الموسم",title:"كل ما تحبّه،\nفي مكان واحد",desc:"اكتشف منتجات مختارة بعناية وأسعار واضحة وتجربة تسوّق عربية سهلة.",image:"https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=1600&q=85",cta:"اكتشف المنتجات"},
   {eyebrow:"تقنية تناسب يومك",title:"ارتقِ بتجربتك\nمع منتجات ذكية",desc:"إلكترونيات وإكسسوارات تجمع بين التصميم الجميل والاستخدام العملي.",image:"https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1600&q=85",cta:"تسوّق الإلكترونيات"},
   {eyebrow:"لمسات تصنع الفرق",title:"تفاصيل صغيرة،\nأناقة أكبر",desc:"اكتشف قطعاً مميزة للمنزل وإطلالتك اليومية.",image:"https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1600&q=85",cta:"اكتشف الجديد"}
  ];
- useEffect(()=>{const timer=window.setInterval(()=>setSlide(current=>(current+1)%slides.length),6500);return ()=>window.clearInterval(timer)},[slides.length]);
- useEffect(()=>{try{const savedCart=localStorage.getItem("obaid-store-cart");const savedFavorites=localStorage.getItem("obaid-store-favorites");const savedTheme=localStorage.getItem("obaid-store-theme");if(savedCart)setCart(JSON.parse(savedCart));if(savedFavorites)setFavorites(JSON.parse(savedFavorites));if(savedTheme==="light"||savedTheme==="dark")setTheme(savedTheme)}catch{}},[]);
- useEffect(()=>{try{localStorage.setItem("obaid-store-cart",JSON.stringify(cart));localStorage.setItem("obaid-store-favorites",JSON.stringify(favorites));localStorage.setItem("obaid-store-theme",theme)}catch{}},[cart,favorites,theme]);
+ useEffect(()=>{const timer=window.setInterval(()=>setSlide(current=>(current+1)%3),6500);return ()=>window.clearInterval(timer)},[]);
+ useEffect(()=>{try{const savedCart=localStorage.getItem("obaid-store-cart");const savedFavorites=localStorage.getItem("obaid-store-favorites");const savedTheme=localStorage.getItem("obaid-store-theme");if(savedCart)setCart(JSON.parse(savedCart));if(savedFavorites)setFavorites(JSON.parse(savedFavorites));if(savedTheme==="light"||savedTheme==="dark")setTheme(savedTheme)}catch{}finally{setPreferencesLoaded(true)}},[]);
+ useEffect(()=>{if(!preferencesLoaded)return;try{localStorage.setItem("obaid-store-cart",JSON.stringify(cart));localStorage.setItem("obaid-store-favorites",JSON.stringify(favorites));localStorage.setItem("obaid-store-theme",theme)}catch{}},[cart,favorites,theme,preferencesLoaded]);
  const visible = useMemo(()=>{let list=products.filter(p=>(category==="الكل"||p.category===category)&&p.name.toLocaleLowerCase("ar").includes(query.trim().toLocaleLowerCase("ar"))&&(!favoritesOnly||favorites.includes(p.id)));if(sortBy==="price-low")list.sort((a,b)=>a.price-b.price);if(sortBy==="price-high")list.sort((a,b)=>b.price-a.price);if(sortBy==="name")list.sort((a,b)=>a.name.localeCompare(b.name,"ar"));return list},[category,query,favoritesOnly,favorites,sortBy]);
  const cartItems = products.filter(p=>cart[p.id]);
  const count = Object.values(cart).reduce((a,b)=>a+b,0);
