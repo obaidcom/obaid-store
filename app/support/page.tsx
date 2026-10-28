@@ -1,4 +1,4 @@
-import { ArrowRight, CircleHelp, Clock3, Mail, MessageCircle, Phone, ShieldCheck, ShoppingBag } from "lucide-react";
+import { ArrowRight, CircleHelp, Mail, MessageCircle, Phone, ShieldCheck, ShoppingBag } from "lucide-react";
 
 const faqs = [
  { q: "كيف أتواصل مع خدمة العملاء؟", a: "يمكنك مراسلتنا عبر البريد الإلكتروني أو الاتصال على رقم الهاتف الموضح في هذه الصفحة. عند التواصل، اذكر اسمك وطريقة التواصل المناسبة وموضوع الاستفسار." },
