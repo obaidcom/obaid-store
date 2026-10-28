@@ -32,7 +32,7 @@ export function CleanStore() {
  const [slide,setSlide] = useState(0);
  const slides = [
   {eyebrow:"اختيارات هذا الموسم",title:"كل ما تحبّه،
-في مكان واحد",desc:"اكتشف منتجات مختارة بعناية وأسعار واضحة وتجربة تسوّق عربية سهلة.",image:"https://images.unsplash.com/photo-1498049794561-7780e723456?auto=format&fit=crop&w=1600&q=85",cta:"اكتشف المنتجات"},
+في مكان واحد",desc:"اكتشف منتجات مختارة بعناية وأسعار واضحة وتجربة تسوّق عربية سهلة.",image:"https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=1600&q=85",cta:"اكتشف المنتجات"},
   {eyebrow:"تقنية تناسب يومك",title:"ارتقِ بتجربتك
 مع منتجات ذكية",desc:"إلكترونيات وإكسسوارات تجمع بين التصميم الجميل والاستخدام العملي.",image:"https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1600&q=85",cta:"تسوّق الإلكترونيات"},
   {eyebrow:"لمسات تصنع الفرق",title:"تفاصيل صغيرة،
