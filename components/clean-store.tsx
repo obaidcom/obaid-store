@@ -45,13 +45,13 @@ export function CleanStore() {
  const add = (id:number) => {setCart(c=>({...c,[id]:(c[id]||0)+1}));setNotice("أُضيف المنتج إلى سلتك");setTimeout(()=>setNotice(""),2200);};
  const toggleFavorite = (id:number) => setFavorites(f=>f.includes(id)?f.filter(x=>x!==id):[...f,id]);
  const scrollProducts = () => document.getElementById("products")?.scrollIntoView({behavior:"smooth"});
- return <main dir="rtl" className="min-h-screen bg-[#101a2d] text-[#e7edf8]">
+ return <main dir="rtl" data-theme={theme} className="store-shell min-h-screen bg-[#101a2d] text-[#e7edf8]">
   <div className="bg-[#123b91] px-4 py-2 text-center text-xs font-bold text-white">تسوّق براحة — الدفع عند الاستلام متاح ضمن خيارات المتجر التجريبية</div>
   <header className="sticky top-0 z-40 border-b border-[#2b3e5d] bg-[#1646a8] text-white shadow-lg shadow-blue-950/10">
    <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 lg:px-6">
     <button onClick={()=>setDrawer("menu")} className="rounded-xl border border-[#304461]/20 p-2 lg:hidden" aria-label="القائمة"><Menu size={20}/></button>
     <a href="#home" className="flex shrink-0 items-center gap-2.5">
-     <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#1b2a43] text-blue-800 shadow"><ShoppingBag size={23}/></span>
+     <span className="logo-mark grid h-11 w-11 place-items-center rounded-2xl text-white shadow-lg"><ShoppingBag size={23}/></span>
      <span><b className="block text-lg font-black leading-tight">عبيد ستور</b><small className="text-[10px] text-blue-100">تسوّق بثقة، كل يوم</small></span>
     </a>
     <nav className="hidden items-center gap-1 text-sm font-bold lg:flex">
@@ -70,9 +70,9 @@ export function CleanStore() {
   <section id="home" className="mx-auto max-w-7xl px-3 pt-5 md:px-6 md:pt-8">
    <div className="store-hero relative isolate overflow-hidden rounded-[30px] border border-[#2b3e5d] bg-[#111d32] shadow-2xl shadow-black/25">
     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_12%_15%,rgba(37,99,235,.22),transparent_38%),radial-gradient(ellipse_at_85%_90%,rgba(14,165,233,.13),transparent_40%)]"/>
-    <div className="relative grid min-h-[520px] items-center gap-7 p-5 sm:p-8 md:grid-cols-[1fr_.95fr] md:gap-10 md:p-12">
+    <div className="relative grid min-h-0 items-center gap-5 p-4 sm:min-h-[520px] sm:gap-7 sm:p-8 md:grid-cols-[1fr_.95fr] md:gap-10 md:p-12">
      <div className="relative z-10 order-2 md:order-1">
-      <span className="inline-flex items-center gap-2 rounded-full border border-blue-400/25 bg-blue-500/10 px-4 py-2 text-xs font-extrabold text-blue-300"><Sparkles size={15}/>{slides[slide].eyebrow}</span>
+      <span className="hero-kicker inline-flex items-center gap-2 rounded-full border border-blue-400/25 bg-blue-500/10 px-4 py-2 text-xs font-extrabold text-blue-300"><Sparkles size={15}/>{slides[slide].eyebrow}</span>
       <h1 className="mt-5 whitespace-pre-line text-4xl font-black leading-[1.2] tracking-tight text-white sm:text-5xl md:text-6xl">{slides[slide].title}</h1>
       <p className="mt-5 max-w-lg text-sm leading-8 text-slate-300 md:text-base">{slides[slide].desc}</p>
       <div className="mt-7 flex flex-wrap items-center gap-3"><button onClick={scrollProducts} className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-blue-950/30 transition hover:-translate-y-0.5 hover:bg-blue-500">{slides[slide].cta}<ArrowLeft size={17}/></button><button onClick={()=>{setCategory("الكل");scrollProducts();}} className="rounded-xl border border-white/15 px-5 py-3.5 text-sm font-bold text-slate-200 transition hover:bg-white/5">تصفّح المتجر</button></div>
@@ -80,7 +80,7 @@ export function CleanStore() {
      </div>
      <div className="relative order-1 mx-auto w-full max-w-[540px] md:order-2">
       <div className="absolute -inset-4 rounded-[32px] bg-blue-500/10 blur-2xl"/>
-      <div className="relative overflow-hidden rounded-[26px] border border-white/10 bg-[#1b2a43] p-2 shadow-2xl">
+      <div className="hero-image-frame relative overflow-hidden rounded-[26px] border border-white/10 bg-[#1b2a43] p-2 shadow-2xl">
        <div className="relative h-[260px] overflow-hidden rounded-[20px] sm:h-[330px] md:h-[390px]">
         <img src={slides[slide].image} alt="" className="h-full w-full object-cover transition duration-700"/>
         <div className="absolute inset-0 bg-gradient-to-t from-[#071326]/75 via-transparent to-[#071326]/10"/>
@@ -107,8 +107,8 @@ export function CleanStore() {
   </section>
   <section id="products" className="mx-auto max-w-7xl px-4 py-7 pb-16 md:px-6 md:py-10">
    <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><span className="text-xs font-black text-blue-700">اختيرت بعناية</span><h2 className="mt-1 text-2xl font-black md:text-3xl">منتجات مميزة</h2><p className="mt-2 text-sm text-slate-400">أسعار تجريبية بالليرة السورية — ليست متصلة بقاعدة بيانات.</p></div><select aria-label="القسم" value={category} onChange={e=>setCategory(e.target.value)} className="rounded-xl border border-[#2b3e5d] bg-[#1b2a43] px-3 py-2.5 text-sm font-bold outline-none">{categories.map(c=><option key={c.name} value={c.name}>{c.name}</option>)}</select></div>
-   {visible.length?<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4">{visible.map(p=><article key={p.id} className="group min-w-0 overflow-hidden rounded-2xl border border-[#2b3e5d] bg-[#1b2a43] shadow-sm transition hover:-translate-y-1 hover:border-[#344b70] hover:shadow-xl hover:shadow-blue-950/10">
-    <div className="relative aspect-square overflow-hidden bg-[#172842]"><img src={p.image} alt={p.name} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105"/>{p.badge&&<span className="absolute right-2 top-2 rounded-lg bg-blue-700 px-2 py-1 text-[10px] font-extrabold text-white">{p.badge}</span>}<button onClick={()=>toggleFavorite(p.id)} aria-label="أضف إلى المفضلة" className={"absolute left-2 top-2 rounded-full p-2 shadow transition "+(favorites.includes(p.id)?"bg-rose-500 text-white":"bg-[#1b2a43]/95 text-slate-300 hover:text-rose-500")}><Heart size={17} fill={favorites.includes(p.id)?"currentColor":"none"}/></button><button onClick={()=>add(p.id)} aria-label="أضف للسلة" className="absolute bottom-2 left-2 right-2 flex items-center justify-center gap-2 rounded-xl bg-[#1b2a43]/95 py-2.5 text-xs font-black text-blue-800 shadow-lg backdrop-blur hover:bg-blue-700 hover:text-white"><Plus size={16}/> أضف إلى السلة</button></div>
+   {visible.length?<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4">{visible.map(p=><article key={p.id} className="product-card group min-w-0 overflow-hidden rounded-2xl border border-[#2b3e5d] bg-[#1b2a43] shadow-sm transition hover:-translate-y-1 hover:border-[#344b70] hover:shadow-xl hover:shadow-blue-950/10">
+    <div className="relative aspect-square overflow-hidden bg-[#172842]"><img src={p.image} alt={p.name} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105"/>{p.badge&&<span className="product-badge absolute right-2 top-2 rounded-lg bg-blue-700 px-2 py-1 text-[10px] font-extrabold text-white">{p.badge}</span>}<button onClick={()=>toggleFavorite(p.id)} aria-label="أضف إلى المفضلة" className={"absolute left-2 top-2 rounded-full p-2 shadow transition "+(favorites.includes(p.id)?"bg-rose-500 text-white":"bg-[#1b2a43]/95 text-slate-300 hover:text-rose-500")}><Heart size={17} fill={favorites.includes(p.id)?"currentColor":"none"}/></button><button onClick={()=>add(p.id)} aria-label="أضف للسلة" className="add-product absolute bottom-2 left-2 right-2 flex items-center justify-center gap-2 rounded-xl bg-[#1b2a43]/95 py-2.5 text-xs font-black text-blue-800 shadow-lg backdrop-blur hover:bg-blue-700 hover:text-white"><Plus size={16}/> أضف إلى السلة</button></div>
     <div className="p-3 md:p-4"><small className="text-[10px] font-bold text-blue-700">{p.category}</small><h3 className="mt-1 min-h-10 text-sm font-extrabold leading-6">{p.name}</h3><div className="mt-3 flex flex-wrap items-baseline gap-2"><b className="text-sm font-black text-blue-800 md:text-base">{money(p.price)}</b>{p.oldPrice&&<del className="text-[10px] text-slate-400">{money(p.oldPrice)}</del>}</div></div>
    </article>)}</div>:<div className="rounded-2xl border border-[#2b3e5d] bg-[#1b2a43] p-10 text-center text-slate-400">لا توجد منتجات مطابقة لبحثك.</div>}
   </section>
