@@ -68,25 +68,35 @@ export function CleanStore() {
    <div className="px-4 pb-3 md:hidden"><label className="flex items-center gap-2 rounded-xl bg-[#1b2a43] px-3 py-2 text-slate-200"><Search size={18} className="text-blue-600"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="ابحث عن منتج..." className="w-full bg-transparent text-sm outline-none"/></label></div>
   </header>
   <section id="home" className="mx-auto max-w-7xl px-3 pt-5 md:px-6 md:pt-8">
-   <div className="relative isolate min-h-[370px] overflow-hidden rounded-[26px] border border-[#2b3e5d] bg-[#1a2a45] shadow-xl shadow-blue-950/10 md:min-h-[465px]">
-    <img src={slides[slide].image} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25 md:opacity-55" />
-    <div className="absolute inset-0 bg-gradient-to-l from-[#101a2d]/95 via-[#14233c]/85 to-[#1b3154]/45"/>
-    <div className="relative z-10 flex min-h-[390px] items-center px-6 py-10 md:min-h-[490px] md:px-14">
-     <div className="max-w-xl rounded-3xl border border-white/10 bg-[#101a2d]/45 p-5 shadow-2xl backdrop-blur-sm md:p-8">
-      <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#344b70] bg-[#233754]/95 px-4 py-2 text-xs font-extrabold text-blue-700"><Sparkles size={15}/>{slides[slide].eyebrow}</span>
-      <h1 className="whitespace-pre-line text-4xl font-black leading-[1.25] tracking-tight text-[#eef3ff] md:text-6xl">{slides[slide].title}</h1>
+   <div className="store-hero relative isolate overflow-hidden rounded-[30px] border border-[#2b3e5d] bg-[#111d32] shadow-2xl shadow-black/25">
+    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_12%_15%,rgba(37,99,235,.22),transparent_38%),radial-gradient(ellipse_at_85%_90%,rgba(14,165,233,.13),transparent_40%)]"/>
+    <div className="relative grid min-h-[520px] items-center gap-7 p-5 sm:p-8 md:grid-cols-[1fr_.95fr] md:gap-10 md:p-12">
+     <div className="relative z-10 order-2 md:order-1">
+      <span className="inline-flex items-center gap-2 rounded-full border border-blue-400/25 bg-blue-500/10 px-4 py-2 text-xs font-extrabold text-blue-300"><Sparkles size={15}/>{slides[slide].eyebrow}</span>
+      <h1 className="mt-5 whitespace-pre-line text-4xl font-black leading-[1.2] tracking-tight text-white sm:text-5xl md:text-6xl">{slides[slide].title}</h1>
       <p className="mt-5 max-w-lg text-sm leading-8 text-slate-300 md:text-base">{slides[slide].desc}</p>
-      <div className="mt-7 flex flex-wrap items-center gap-3"><button onClick={scrollProducts} className="flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-blue-700/20 hover:bg-blue-800">{slides[slide].cta}<ArrowLeft size={17}/></button><span className="text-xs font-bold text-slate-400">منتجات مختارة • تجربة عربية</span></div>
+      <div className="mt-7 flex flex-wrap items-center gap-3"><button onClick={scrollProducts} className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-blue-950/30 transition hover:-translate-y-0.5 hover:bg-blue-500">{slides[slide].cta}<ArrowLeft size={17}/></button><button onClick={()=>{setCategory("الكل");scrollProducts();}} className="rounded-xl border border-white/15 px-5 py-3.5 text-sm font-bold text-slate-200 transition hover:bg-white/5">تصفّح المتجر</button></div>
+      <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-bold text-slate-400"><span className="flex items-center gap-2"><ShieldCheck size={16} className="text-blue-300"/> تفاصيل واضحة</span><span className="flex items-center gap-2"><Truck size={16} className="text-blue-300"/> خيارات توصيل مرنة</span></div>
+     </div>
+     <div className="relative order-1 mx-auto w-full max-w-[540px] md:order-2">
+      <div className="absolute -inset-4 rounded-[32px] bg-blue-500/10 blur-2xl"/>
+      <div className="relative overflow-hidden rounded-[26px] border border-white/10 bg-[#1b2a43] p-2 shadow-2xl">
+       <div className="relative h-[260px] overflow-hidden rounded-[20px] sm:h-[330px] md:h-[390px]">
+        <img src={slides[slide].image} alt="" className="h-full w-full object-cover transition duration-700"/>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#071326]/75 via-transparent to-[#071326]/10"/>
+        <div className="absolute bottom-4 right-4 left-4 flex items-end justify-between gap-3">
+         <div className="rounded-xl border border-white/15 bg-[#101a2d]/75 px-4 py-3 text-white backdrop-blur-md"><span className="block text-[10px] font-bold text-blue-200">عبيد ستور</span><b className="mt-1 block text-sm">اكتشف ما يناسبك</b></div>
+         <div className="flex gap-1.5 rounded-full border border-white/10 bg-[#101a2d]/65 p-2 backdrop-blur-md">{slides.map((s,i)=><button key={s.eyebrow} onClick={()=>setSlide(i)} aria-label={"الشريحة "+(i+1)} className={"h-2 rounded-full transition-all "+(slide===i?"w-7 bg-blue-400":"w-2 bg-white/55")}/>)}</div>
+        </div>
+       </div>
+       <div className="mt-2 grid grid-cols-3 gap-2">{slides.map((s,i)=><button key={s.eyebrow} onClick={()=>setSlide(i)} className={"group relative h-[58px] overflow-hidden rounded-xl border transition sm:h-[70px] "+(slide===i?"border-blue-400 ring-1 ring-blue-400/50":"border-white/10 opacity-65 hover:opacity-100")}><img src={s.image} alt="" className="h-full w-full object-cover"/><span className="absolute inset-0 bg-slate-950/45"/><span className="absolute inset-x-1 bottom-2 truncate text-center text-[10px] font-bold text-white">{s.eyebrow}</span></button>)}</div>
+      </div>
+      <div className="absolute -bottom-4 -left-3 hidden items-center gap-3 rounded-2xl border border-white/10 bg-[#182944] px-4 py-3 shadow-xl sm:flex"><span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-500/15 text-blue-300"><ShoppingBag size={19}/></span><span><b className="block text-xs text-white">تجربة تسوّق عربية</b><small className="mt-1 block text-[10px] text-slate-400">سهلة وواضحة على كل شاشة</small></span></div>
      </div>
     </div>
-    <img src={slides[slide].image} alt="" aria-hidden="true" className="absolute bottom-0 left-0 h-20 w-full scale-y-[-1] object-cover opacity-25 [mask-image:linear-gradient(to_bottom,black,transparent)] md:h-28"/>
-    <div className="absolute bottom-5 left-5 z-20 flex gap-2">{slides.map((s,i)=><button key={s.eyebrow} onClick={()=>setSlide(i)} aria-label={"الشريحة "+(i+1)} className={"h-2.5 rounded-full transition-all "+(slide===i?"w-8 bg-blue-700":"w-2.5 bg-[#1b2a43]/80")}/>)}</div>
-    <button onClick={()=>setSlide((slide+slides.length-1)%slides.length)} aria-label="السابق" className="absolute left-4 top-1/2 z-20 hidden -translate-y-1/2 rounded-full border border-[#304461] bg-[#1b2a43]/90 p-3 text-blue-800 shadow md:block"><ChevronLeft size={19}/></button>
-    <button onClick={()=>setSlide((slide+1)%slides.length)} aria-label="التالي" className="absolute right-4 top-1/2 z-20 hidden -translate-y-1/2 rounded-full border border-[#304461] bg-[#1b2a43]/90 p-3 text-blue-800 shadow md:block"><ChevronLeft size={19} className="rotate-180"/></button>
+    <button onClick={()=>setSlide((slide+slides.length-1)%slides.length)} aria-label="السابق" className="absolute left-3 top-1/2 z-20 hidden -translate-y-1/2 rounded-full border border-white/15 bg-[#101a2d]/75 p-3 text-white backdrop-blur transition hover:bg-blue-600 md:block"><ChevronLeft size={19}/></button>
+    <button onClick={()=>setSlide((slide+1)%slides.length)} aria-label="التالي" className="absolute right-3 top-1/2 z-20 hidden -translate-y-1/2 rounded-full border border-white/15 bg-[#101a2d]/75 p-3 text-white backdrop-blur transition hover:bg-blue-600 md:block"><ChevronLeft size={19} className="rotate-180"/></button>
    </div>
-  </section>
-  <section className="mx-auto grid max-w-7xl grid-cols-1 gap-3 px-4 py-5 sm:grid-cols-3 md:px-6 md:py-7">
-   {[{icon:Truck,title:"توصيل مرن",desc:"خيارات توصيل حسب المنطقة"},{icon:ShieldCheck,title:"تسوّق مطمئن",desc:"تفاصيل واضحة لكل منتج"},{icon:Headphones,title:"نحن هنا للمساعدة",desc:"خدمة عملاء تهتم بك"}].map(({icon:Icon,title,desc})=><div key={title} className="flex items-center gap-3 rounded-2xl border border-[#2b3e5d] bg-[#1b2a43]/90 p-4 shadow-sm"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#223552] text-blue-700"><Icon size={21}/></span><span><b className="block text-sm">{title}</b><small className="mt-1 block text-xs text-slate-400">{desc}</small></span></div>)}
   </section>
   <section id="categories" className="mx-auto max-w-7xl px-4 py-5 md:px-6">
    <div className="mb-5 flex items-end justify-between"><div><span className="text-xs font-black text-blue-700">تصفّح كما تحب</span><h2 className="mt-1 text-2xl font-black md:text-3xl">تسوّق حسب القسم</h2></div><button onClick={()=>{setCategory("الكل");scrollProducts();}} className="text-xs font-extrabold text-blue-700">كل المنتجات ←</button></div>
