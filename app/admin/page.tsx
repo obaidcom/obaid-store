@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type React from "react";
 import {
   Activity, Bell, Check, ChevronLeft, CircleDollarSign,
   ClipboardList, CreditCard, Gauge, Globe2, LayoutDashboard, Menu, Package,
@@ -21,13 +22,31 @@ const initialSettings: StoreSettings = {
   paymentCod: true, paymentSham: false, paymentSyriatel: false, paymentMtn: false,
   announcement: "أهلاً بكم في متجر عبيد الإلكتروني", orderNotifications: true, lowStockAlerts: true
 };
-const tabs: { id: Tab; label: string; icon: typeof Gauge }[] = [
-  { id: "overview", label: "نظرة عامة", icon: LayoutDashboard },
-  { id: "store", label: "إعدادات المتجر", icon: Settings2 },
-  { id: "shipping", label: "الشحن والتوصيل", icon: Truck },
-  { id: "payments", label: "طرق الدفع", icon: CreditCard },
-  { id: "notifications", label: "الإشعارات", icon: Bell }
+const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+  { id: "overview", label: "نظرة عامة", icon: <LayoutDashboard size={18}/> },
+  { id: "store", label: "إعدادات المتجر", icon: <Settings2 size={18}/> },
+  { id: "shipping", label: "الشحن والتوصيل", icon: <Truck size={18}/> },
+  { id: "payments", label: "طرق الدفع", icon: <CreditCard size={18}/> },
+  { id: "notifications", label: "الإشعارات", icon: <Bell size={18}/> }
 ];
+
+
+function Field({ label, value, onChange, placeholder, type = "text", hint }: {
+    label: string; value: string; onChange: (v: string) => void;
+    placeholder?: string; type?: string; hint?: string;
+  }) { return <label className="grid gap-2 text-sm">
+    <span className="font-bold text-[var(--foreground)]">{label}</span>
+    <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+      className="h-12 w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--ring)]" />
+    {hint && <span className="text-xs leading-5 text-[var(--muted-foreground)]">{hint}</span>}
+  </label>; }
+
+function Toggle({ label, description, checked, onChange }: {
+    label: string; description: string; checked: boolean; onChange: (v: boolean) => void;
+  }) { return <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-[var(--border)] p-4">
+    <span className="grid gap-1"><span className="text-sm font-extrabold">{label}</span><span className="text-xs leading-5 text-[var(--muted-foreground)]">{description}</span></span>
+    <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="size-5 accent-blue-600" />
+  </label>; }
 
 export default function AdminPage() {
   const [tab, setTab] = useState<Tab>("overview");
@@ -54,23 +73,6 @@ export default function AdminPage() {
   };
   const active = tabs.find(item => item.id === tab) || tabs[0];
 
-  const Field = ({ label, value, onChange, placeholder, type = "text", hint }: {
-    label: string; value: string; onChange: (v: string) => void;
-    placeholder?: string; type?: string; hint?: string;
-  }) => <label className="grid gap-2 text-sm">
-    <span className="font-bold text-[var(--foreground)]">{label}</span>
-    <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-      className="h-12 w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--ring)]" />
-    {hint && <span className="text-xs leading-5 text-[var(--muted-foreground)]">{hint}</span>}
-  </label>;
-
-  const Toggle = ({ label, description, checked, onChange }: {
-    label: string; description: string; checked: boolean; onChange: (v: boolean) => void;
-  }) => <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-[var(--border)] p-4">
-    <span className="grid gap-1"><span className="text-sm font-extrabold">{label}</span><span className="text-xs leading-5 text-[var(--muted-foreground)]">{description}</span></span>
-    <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="size-5 accent-blue-600" />
-  </label>;
-
   return <main dir="rtl" className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
     <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--card)]/95 backdrop-blur-xl">
       <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between gap-3 px-4 sm:px-6">
@@ -93,7 +95,7 @@ export default function AdminPage() {
           <p className="text-xs leading-6 text-[var(--muted-foreground)]">هذه واجهة أولية. تسجيل الدخول والصلاحيات وقاعدة البيانات ستُفعّل في مرحلة الربط.</p>
         </div>
         <nav className="grid gap-1.5">
-          {tabs.map(item => { const Icon = item.icon; return <button key={item.id} onClick={() => { setTab(item.id); setMobileMenu(false); }} className={`flex h-12 items-center gap-3 rounded-xl px-4 text-sm font-bold transition ${tab === item.id ? "bg-[var(--primary)] text-[var(--primary-foreground)] shadow-md" : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"}`}><Icon size={18}/>{item.label}{tab === item.id && <ChevronLeft className="mr-auto" size={16}/>}</button>; })}
+          {tabs.map(item => <button key={item.id} onClick={() => { setTab(item.id); setMobileMenu(false); }} className={`flex h-12 items-center gap-3 rounded-xl px-4 text-sm font-bold transition ${tab === item.id ? "bg-[var(--primary)] text-[var(--primary-foreground)] shadow-md" : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"}`}>{item.icon}{item.label}{tab === item.id && <ChevronLeft className="mr-auto" size={16}/>}</button>)}
         </nav>
         <div className="mt-8 rounded-xl border border-[var(--border)] p-4">
           <div className="mb-2 flex items-center gap-2 text-emerald-500"><Activity size={17}/><span className="text-xs font-extrabold">حالة المشروع</span></div>
@@ -111,10 +113,10 @@ export default function AdminPage() {
 
         {tab === "overview" && <div className="grid gap-5">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {[{title:"المنتجات",value:"تجريبي",sub:"ستُربط بقاعدة البيانات",icon:Package},{title:"الطلبات",value:"تجريبي",sub:"لا توجد طلبات حقيقية بعد",icon:ClipboardList},{title:"العملاء",value:"قريباً",sub:"بعد إعداد تسجيل الدخول",icon:Users},{title:"المبيعات",value:"—",sub:"تظهر بعد ربط الطلبات",icon:CircleDollarSign}].map((item,i)=>{const Icon=item.icon;return <div key={item.title} className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm"><div className="mb-5 flex items-center justify-between"><span className="text-sm font-bold text-[var(--muted-foreground)]">{item.title}</span><span className="flex size-10 items-center justify-center rounded-xl bg-[var(--secondary)] text-[var(--primary)]"><Icon size={19}/></span></div><p className="text-2xl font-black">{item.value}</p><p className="mt-2 text-xs text-[var(--muted-foreground)]">{item.sub}</p></div>})}
+            {[{title:"المنتجات",value:"تجريبي",sub:"ستُربط بقاعدة البيانات",icon:<Package size={19}/>},{title:"الطلبات",value:"تجريبي",sub:"لا توجد طلبات حقيقية بعد",icon:<ClipboardList size={19}/>},{title:"العملاء",value:"قريباً",sub:"بعد إعداد تسجيل الدخول",icon:<Users size={19}/>},{title:"المبيعات",value:"—",sub:"تظهر بعد ربط الطلبات",icon:<CircleDollarSign size={19}/>}].map((item,i)=><div key={item.title} className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm"><div className="mb-5 flex items-center justify-between"><span className="text-sm font-bold text-[var(--muted-foreground)]">{item.title}</span><span className="flex size-10 items-center justify-center rounded-xl bg-[var(--secondary)] text-[var(--primary)]">{item.icon}</span></div><p className="text-2xl font-black">{item.value}</p><p className="mt-2 text-xs text-[var(--muted-foreground)]">{item.sub}</p></div>)}
           </div>
           <div className="grid gap-5 xl:grid-cols-[1.2fr_.8fr]">
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-6"><h2 className="mb-4 text-lg font-black">ابدأ إعداد متجرك</h2><div className="grid gap-3">{[{label:"بيانات المتجر والتواصل",desc:"اسم المتجر ورقم الدعم والبريد",id:"store" as Tab,icon:Settings2},{label:"المحافظات ورسوم التوصيل",desc:"حدد مناطق التوصيل والتكلفة",id:"shipping" as Tab,icon:Truck},{label:"طرق الدفع",desc:"تجهيز خيارات الدفع المتاحة في سوريا",id:"payments" as Tab,icon:CreditCard}].map(item=>{const Icon=item.icon;return <button key={item.id} onClick={()=>setTab(item.id)} className="flex items-center gap-3 rounded-xl border border-[var(--border)] p-4 text-right transition hover:border-[var(--primary)] hover:bg-[var(--muted)]"><span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--secondary)] text-[var(--primary)]"><Icon size={18}/></span><span className="min-w-0 flex-1"><span className="block text-sm font-extrabold">{item.label}</span><span className="mt-1 block text-xs text-[var(--muted-foreground)]">{item.desc}</span></span><ChevronLeft size={17}/></button>})}</div></div>
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-6"><h2 className="mb-4 text-lg font-black">ابدأ إعداد متجرك</h2><div className="grid gap-3">{[{label:"بيانات المتجر والتواصل",desc:"اسم المتجر ورقم الدعم والبريد",id:"store" as Tab,icon:<Settings2 size={18}/>},{label:"المحافظات ورسوم التوصيل",desc:"حدد مناطق التوصيل والتكلفة",id:"shipping" as Tab,icon:<Truck size={18}/>},{label:"طرق الدفع",desc:"تجهيز خيارات الدفع المتاحة في سوريا",id:"payments" as Tab,icon:<CreditCard size={18}/>}].map(item=><button key={item.id} onClick={()=>setTab(item.id)} className="flex items-center gap-3 rounded-xl border border-[var(--border)] p-4 text-right transition hover:border-[var(--primary)] hover:bg-[var(--muted)]"><span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--secondary)] text-[var(--primary)]">{item.icon}</span><span className="min-w-0 flex-1"><span className="block text-sm font-extrabold">{item.label}</span><span className="mt-1 block text-xs text-[var(--muted-foreground)]">{item.desc}</span></span><ChevronLeft size={17}/></button>)}</div></div>
             <div className="rounded-2xl border border-amber-400/25 bg-amber-400/5 p-5 sm:p-6"><div className="mb-3 flex items-center gap-2 text-amber-500"><ShieldCheck size={20}/><h2 className="font-black">مهم قبل الإطلاق</h2></div><ul className="grid gap-3 text-sm leading-6 text-[var(--muted-foreground)]"><li>• إنشاء مشروع Supabase مستقل للمتجر.</li><li>• تشغيل ملف قاعدة البيانات ومراجعة الجداول.</li><li>• تأمين صلاحيات المدير وحسابات العملاء.</li><li>• اختبار الطلبات قبل استقبال زبائن حقيقيين.</li></ul></div>
           </div>
         </div>}
