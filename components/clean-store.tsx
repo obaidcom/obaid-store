@@ -31,12 +31,9 @@ export function CleanStore() {
  const [notice,setNotice] = useState("");
  const [slide,setSlide] = useState(0);
  const slides = [
-  {eyebrow:"اختيارات هذا الموسم",title:"كل ما تحبّه،
-في مكان واحد",desc:"اكتشف منتجات مختارة بعناية وأسعار واضحة وتجربة تسوّق عربية سهلة.",image:"https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=1600&q=85",cta:"اكتشف المنتجات"},
-  {eyebrow:"تقنية تناسب يومك",title:"ارتقِ بتجربتك
-مع منتجات ذكية",desc:"إلكترونيات وإكسسوارات تجمع بين التصميم الجميل والاستخدام العملي.",image:"https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1600&q=85",cta:"تسوّق الإلكترونيات"},
-  {eyebrow:"لمسات تصنع الفرق",title:"تفاصيل صغيرة،
-أناقة أكبر",desc:"اكتشف قطعاً مميزة للمنزل وإطلالتك اليومية.",image:"https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1600&q=85",cta:"اكتشف الجديد"}
+  {eyebrow:"اختيارات هذا الموسم",title:"كل ما تحبّه،\nفي مكان واحد",desc:"اكتشف منتجات مختارة بعناية وأسعار واضحة وتجربة تسوّق عربية سهلة.",image:"https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=1600&q=85",cta:"اكتشف المنتجات"},
+  {eyebrow:"تقنية تناسب يومك",title:"ارتقِ بتجربتك\nمع منتجات ذكية",desc:"إلكترونيات وإكسسوارات تجمع بين التصميم الجميل والاستخدام العملي.",image:"https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1600&q=85",cta:"تسوّق الإلكترونيات"},
+  {eyebrow:"لمسات تصنع الفرق",title:"تفاصيل صغيرة،\nأناقة أكبر",desc:"اكتشف قطعاً مميزة للمنزل وإطلالتك اليومية.",image:"https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1600&q=85",cta:"اكتشف الجديد"}
  ];
  const visible = useMemo(()=>products.filter(p=>(category==="الكل"||p.category===category)&&p.name.includes(query.trim())),[category,query]);
  const cartItems = products.filter(p=>cart[p.id]);
