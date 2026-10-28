@@ -166,7 +166,18 @@ export function CleanStore() {
      {accountNotice&&<p role="status" className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-sm leading-6 text-amber-200">{accountNotice}</p>}
     </form>
     <p className="mt-4 text-center text-[11px] leading-6 text-slate-500">لا تستخدم كلمة مرورك الحقيقية هنا؛ هذه الشاشة لا تحفظ البيانات ولا تتصل بخادم.</p>
-   </div>:<div className="grid gap-3 py-5"><a onClick={()=>setDrawer(null)} href="#home" className="rounded-xl bg-[#1b2a43] p-4 font-bold">الرئيسية</a><a onClick={()=>setDrawer(null)} href="#categories" className="rounded-xl bg-[#1b2a43] p-4 font-bold">الأقسام</a><a onClick={()=>setDrawer(null)} href="#products" className="rounded-xl bg-[#1b2a43] p-4 font-bold">المنتجات</a><button onClick={()=>{setDrawer("account")}} className="rounded-xl bg-[#1b2a43] p-4 text-right font-bold">حسابي</button></div>}
+   </div>:<div className="grid gap-3 py-5"><a onClick={()=>setDrawer(null)} href="#home" className="rounded-xl bg-[#1b2a43] p-4 font-bold">الرئيسية</a><a onClick={()=>setDrawer(null)} href="#categories" className="rounded-xl bg-[#1b2a43] p-4 font-bold">الأقسام</a><a onClick={()=>setDrawer(null)} href="#products" className="rounded-xl bg-[#1b2a43] p-4 font-bold">المنتجات</a><button onClick={()=>{setDrawer("account")}} className="rounded-xl bg-[#1b2a43] p-4 text-right font-bold">حسابي</button>
+    <div className="mt-3 rounded-2xl border border-[#2b3e5d] bg-[#101a2d] p-4">
+     <b className="block text-sm font-extrabold">تابعنا على التواصل الاجتماعي</b>
+     <p className="mt-1 text-xs text-slate-400">كن على اطلاع بآخر المنتجات والعروض.</p>
+     <div className="mt-4 grid grid-cols-2 gap-2">
+      <a href="https://www.facebook.com/" target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-xl bg-[#1877F2] px-3 py-3 text-sm font-bold text-white transition hover:brightness-110"><svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5" fill="currentColor"><path d="M13.4 21v-7.3h2.45l.37-2.85H13.4V9.03c0-.83.23-1.4 1.42-1.4h1.52V5.08c-.26-.04-1.17-.11-2.22-.11-2.2 0-3.7 1.34-3.7 3.8v2.08H7.94v2.85h2.48V21h2.98Z"/></svg>فيسبوك</a>
+      <a href="https://www.instagram.com/" target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-xl bg-gradient-to-l from-[#feda75] via-[#d62976] to-[#4f5bd5] px-3 py-3 text-sm font-bold text-white transition hover:brightness-110"><svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3.2" y="3.2" width="17.6" height="17.6" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.7" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>إنستغرام</a>
+      <a href="https://x.com/" target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-xl bg-black px-3 py-3 text-sm font-bold text-white ring-1 ring-white/15 transition hover:brightness-125"><svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5" fill="currentColor"><path d="M18.9 2H22l-6.78 7.75L23.2 22h-6.25l-4.9-7.65L5.35 22H2.2l7.25-8.29L1.8 2h6.4l4.43 6.97L18.9 2Zm-1.1 18h1.73L7.28 3.9H5.42L17.8 20Z"/></svg>منصة إكس</a>
+      <a href="https://www.tiktok.com/" target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-xl bg-[#111111] px-3 py-3 text-sm font-bold text-white ring-1 ring-cyan-300/30 transition hover:brightness-125"><svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5" fill="currentColor"><path d="M19.6 7.4a6.8 6.8 0 0 1-4.1-1.4v8.2a6 6 0 1 1-5.2-5.95v3.2a2.9 2.9 0 1 0 2.05 2.75V2h3.15c.28 2.22 1.75 3.94 4.1 4.25V7.4Z"/></svg>تيك توك</a>
+     </div>
+    </div>
+   </div>}
   </aside></div>}
  </main>;
 }
