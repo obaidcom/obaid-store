@@ -16,8 +16,8 @@ type View = "login" | "signup" | "profile" | "settings" | "tracking";
 
 export function AuthPage() {
   const [view, setView] = useState<View>("login");
-  // This remains false until a real authentication provider verifies the user.
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Connect this gate to the real auth session when authentication is enabled.
+  const isAuthenticated = false;
   const [notice, setNotice] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
