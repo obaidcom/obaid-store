@@ -2,13 +2,20 @@
 
 import Link from "next/link";
 import { useState, type FormEvent, type ChangeEvent } from "react";
-import { ArrowRight, Camera, CheckCircle2, CircleUserRound, LockKeyhole, Mail, UserRound, Phone, MapPin } from "lucide-react";
+import { ArrowRight, Camera, CircleUserRound, LockKeyhole, Mail, UserRound, Phone, MapPin, Settings2, PackageSearch, Palette, ShieldCheck, ImagePlus, Save, UserCog } from "lucide-react";
 
 const governorates = ["دمشق","ريف دمشق","حلب","حمص","حماة","اللاذقية","طرطوس","إدلب","دير الزور","الحسكة","الرقة","درعا","السويداء","القنيطرة"];
+const themes = [
+  { name: "أزرق عبيد", value: "blue", swatch: "#2563eb" },
+  { name: "بنفسجي", value: "violet", swatch: "#7c3aed" },
+  { name: "أخضر", value: "green", swatch: "#059669" },
+  { name: "خمري", value: "rose", swatch: "#e11d48" },
+];
+
+type View = "login" | "signup" | "profile" | "settings" | "tracking";
 
 export function AuthPage() {
-  const [activeMode, setActiveMode] = useState<"login" | "signup">("login");
-  const [created, setCreated] = useState(false);
+  const [view, setView] = useState<View>("login");
   const [notice, setNotice] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -17,120 +24,190 @@ export function AuthPage() {
   const [address, setAddress] = useState("");
   const [password, setPassword] = useState("");
   const [avatar, setAvatar] = useState("");
+  const [theme, setTheme] = useState("blue");
+  const [trackingCode, setTrackingCode] = useState("");
+  const [savedNotice, setSavedNotice] = useState("");
+
+  const activeTheme = themes.find((item) => item.value === theme) ?? themes[0];
 
   const saveAvatar = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setNotice("اختر ملف صورة صالحاً.");
+      setNotice("يرجى اختيار ملف صورة صالح.");
       event.target.value = "";
       return;
     }
-    if (file.size > 1500000) {
-      setNotice("حجم الصورة كبير؛ اختر صورة أقل من 1.5 ميغابايت.");
+    if (file.size > 3_000_000) {
+      setNotice("حجم الصورة كبير؛ الحد الأقصى 3 ميغابايت.");
       event.target.value = "";
       return;
     }
     const reader = new FileReader();
     reader.onload = () => {
-      if (typeof reader.result !== "string") return;
-      setAvatar(reader.result);
-      setNotice("تم اختيار الصورة الشخصية.");
+      if (typeof reader.result === "string") {
+        setAvatar(reader.result);
+        setSavedNotice("تم تحديث معاينة الصورة في هذه الصفحة فقط؛ لم تُرفع إلى خادم.");
+      }
     };
     reader.readAsDataURL(file);
     event.target.value = "";
   };
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const submitAuth = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setNotice("");
-    try {
-      if (activeMode === "signup") {
-        const profile = { name, email, phone, governorate, address };
-        localStorage.setItem("obaid-store-profile", JSON.stringify(profile));
-        localStorage.setItem("obaid-store-demo-account", JSON.stringify({ email, password }));
-        if (avatar) localStorage.setItem("obaid-store-avatar", avatar);
-        setCreated(true);
-        setNotice("تم إنشاء الحساب التجريبي وحفظ بياناتك على هذا الجهاز.");
-        return;
-      }
-      const account = localStorage.getItem("obaid-store-demo-account");
-      const saved = account ? JSON.parse(account) as { email: string; password: string } : null;
-      if (saved && saved.email === email && saved.password === password) {
-        setNotice("تم تسجيل الدخول إلى الحساب التجريبي على هذا الجهاز.");
-      } else {
-        setNotice("لم نعثر على حساب تجريبي مطابق على هذا الجهاز. يمكنك إنشاء حساب من الرابط أدناه.");
-      }
-    } catch {
-      setNotice("تعذر حفظ بيانات الحساب على هذا الجهاز.");
-    }
+    setNotice("النموذج جاهز للربط، لكن المصادقة غير مفعّلة بعد. لم يتم إنشاء حساب أو تسجيل دخول، ولم تُحفظ كلمة المرور.");
   };
 
+  const submitTracking = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setNotice("تتبع الطلبات غير متصل بقاعدة البيانات حتى الآن؛ لم يتم إجراء بحث فعلي عن هذا الرقم.");
+  };
+
+  const showView = (next: View) => {
+    setView(next);
+    setNotice("");
+    setSavedNotice("");
+  };
+
+  const navItems: { id: View; label: string; icon: typeof LockKeyhole }[] = [
+    { id: "login", label: "دخول", icon: LockKeyhole },
+    { id: "signup", label: "حساب جديد", icon: UserRound },
+    { id: "profile", label: "ملفي الشخصي", icon: UserCog },
+    { id: "settings", label: "الإعدادات", icon: Settings2 },
+    { id: "tracking", label: "تتبع الطلب", icon: PackageSearch },
+  ];
+
   return (
-    <main dir="rtl" className="min-h-screen bg-[#101a2d] px-4 py-8 text-[#e7edf8] sm:py-14">
-      <div className="mx-auto max-w-md">
-        <Link href="/" className="mb-7 inline-flex items-center gap-2 text-sm font-bold text-blue-300 hover:text-white">
+    <main dir="rtl" className="min-h-screen bg-slate-950 px-3 py-6 text-slate-100 sm:px-4 sm:py-10">
+      <div className="mx-auto max-w-3xl">
+        <Link href="/" className="mb-5 inline-flex items-center gap-2 text-sm font-bold text-blue-300 transition hover:text-white">
           <ArrowRight size={18} /> العودة إلى عبيد ستور
         </Link>
-        <section className="overflow-hidden rounded-[28px] border border-[#2b3e5d] bg-[#17253d] shadow-2xl shadow-black/20">
-          <div className="bg-gradient-to-l from-blue-800 via-blue-700 to-sky-600 px-6 py-7 text-center text-white">
-            <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-white/20 bg-white/10">
-              {created ? <CheckCircle2 size={28} /> : activeMode === "signup" ? <UserRound size={28} /> : <LockKeyhole size={27} />}
-            </span>
-            <h1 className="mt-4 text-2xl font-black">{created ? "تم إنشاء حسابك" : "تسجيل الدخول أو إنشاء حساب"}</h1>
-            <p className="mt-2 text-sm leading-6 text-blue-100">{created ? "تم حفظ بياناتك التجريبية على هذا الجهاز." : activeMode === "signup" ? "أدخل بياناتك وصورتك الشخصية مرة واحدة في النموذج نفسه." : "سجّل الدخول أو أنشئ حساباً جديداً من الصفحة نفسها."}</p>
-          </div>
-          <div className="p-5 sm:p-7">
-            {created ? (
-              <div className="grid gap-5 text-center">
-                <div className="mx-auto grid h-28 w-28 place-items-center overflow-hidden rounded-full border-4 border-blue-400/30 bg-blue-500/10 text-blue-300">
-                  {avatar ? <img src={avatar} alt="الصورة الشخصية" className="h-full w-full object-cover" /> : <CircleUserRound size={64} />}
-                </div>
-                <p className="text-sm leading-7 text-slate-300">اسم الحساب: <b>{name}</b><br />المحافظة: <b>{governorate}</b><br />رقم الهاتف: <b>{phone || "لم تتم إضافته"}</b></p>
-                {notice && <p role="status" className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-3 text-sm leading-6 text-emerald-200">{notice}</p>}
-                <Link href="/" className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 font-extrabold text-white hover:bg-blue-500"><CheckCircle2 size={18} /> متابعة إلى المتجر</Link>
-                <button type="button" onClick={() => { setCreated(false); setActiveMode("login"); setNotice(""); }} className="text-sm font-bold text-blue-300 hover:text-white">الانتقال إلى تسجيل الدخول</button>
+
+        <section className="overflow-hidden rounded-[28px] border border-slate-700/80 bg-slate-900 shadow-2xl shadow-black/30">
+          <div className="px-5 py-7 text-white sm:px-8" style={{ background: `linear-gradient(115deg, ${activeTheme.swatch}, #0f172a 125%)` }}>
+            <div className="flex items-center gap-4">
+              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-white/20 bg-white/10">
+                {view === "profile" ? <UserCog size={27} /> : view === "settings" ? <Settings2 size={27} /> : view === "tracking" ? <PackageSearch size={27} /> : view === "signup" ? <UserRound size={27} /> : <LockKeyhole size={27} />}
               </div>
-            ) : (
+              <div>
+                <h1 className="text-xl font-black sm:text-2xl">{navItems.find((item) => item.id === view)?.label === "دخول" ? "تسجيل الدخول" : navItems.find((item) => item.id === view)?.label}</h1>
+                <p className="mt-1 text-sm leading-6 text-white/80">حسابك وإعداداتك في مكان واحد، دون تكرار صفحات الحساب.</p>
+              </div>
+            </div>
+          </div>
+
+          <nav aria-label="خيارات الحساب" className="grid grid-cols-2 gap-2 border-b border-slate-700 bg-slate-900 p-3 sm:grid-cols-5">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button key={item.id} type="button" onClick={() => showView(item.id)} aria-current={view === item.id ? "page" : undefined}
+                  className={`flex items-center justify-center gap-2 rounded-xl px-2 py-3 text-xs font-extrabold transition sm:text-sm ${view === item.id ? "bg-blue-600 text-white shadow-lg shadow-blue-950/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}>
+                  <Icon size={16} /> {item.label}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="p-4 sm:p-7">
+            {(view === "login" || view === "signup") && (
               <>
-                <div className="mb-5 grid grid-cols-2 gap-2 rounded-xl border border-[#344b70] bg-[#101a2d] p-1">
-                  <button type="button" onClick={() => { setActiveMode("login"); setNotice(""); }} className={"rounded-lg px-3 py-2.5 text-sm font-extrabold transition " + (activeMode === "login" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white")}>تسجيل الدخول</button>
-                  <button type="button" onClick={() => { setActiveMode("signup"); setNotice(""); }} className={"rounded-lg px-3 py-2.5 text-sm font-extrabold transition " + (activeMode === "signup" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white")}>إنشاء حساب جديد</button>
+                <div className="mb-5 rounded-2xl border border-amber-400/25 bg-amber-400/5 p-3 text-sm leading-6 text-amber-100">
+                  <div className="flex items-center gap-2 font-extrabold"><ShieldCheck size={17} /> توضيح مهم قبل المتابعة</div>
+                  هذه واجهة قيد التجهيز للربط بقاعدة البيانات. تسجيل الدخول وإنشاء الحساب غير مفعّلين حاليًا، ولن يتم حفظ بياناتك أو كلمة مرورك أو إرسالها.
                 </div>
-                <form className="grid gap-4" onSubmit={submit}>
-                  {activeMode === "signup" && (
+                <div className="mb-5 flex rounded-xl border border-slate-700 bg-slate-950 p-1">
+                  <button type="button" onClick={() => showView("login")} className={`flex-1 rounded-lg px-3 py-3 text-sm font-extrabold ${view === "login" ? "bg-blue-600 text-white" : "text-slate-400"}`}>تسجيل الدخول</button>
+                  <button type="button" onClick={() => showView("signup")} className={`flex-1 rounded-lg px-3 py-3 text-sm font-extrabold ${view === "signup" ? "bg-blue-600 text-white" : "text-slate-400"}`}>إنشاء حساب جديد</button>
+                </div>
+                <form className="grid gap-4 sm:grid-cols-2" onSubmit={submitAuth}>
+                  {view === "signup" && (
                     <>
-                      <div className="flex flex-col items-center gap-3 rounded-2xl border border-blue-400/20 bg-blue-500/5 p-4">
+                      <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-700 bg-slate-950/60 p-4 sm:col-span-2">
                         <div className="grid h-24 w-24 place-items-center overflow-hidden rounded-full border-4 border-blue-400/30 bg-blue-500/10 text-blue-300">
                           {avatar ? <img src={avatar} alt="معاينة الصورة الشخصية" className="h-full w-full object-cover" /> : <CircleUserRound size={52} />}
                         </div>
-                        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-blue-400/30 bg-blue-500/10 px-4 py-3 text-sm font-bold text-blue-200 transition hover:bg-blue-500/20">
-                          <Camera size={17} /> {avatar ? "تغيير الصورة الشخصية" : "إضافة صورة شخصية (اختياري)"}
+                        <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-blue-400/30 bg-blue-500/10 px-4 py-3 text-sm font-bold text-blue-200 hover:bg-blue-500/20">
+                          <Camera size={17} /> اختيار صورة شخصية
                           <input type="file" accept="image/*" className="hidden" onChange={saveAvatar} />
                         </label>
-                        <span className="text-center text-[11px] text-slate-400">صورة حتى 1.5 ميغابايت، ويمكن تخطيها.</span>
+                        <span className="text-center text-xs text-slate-500">معاينة فقط؛ رفع الصورة إلى الخادم غير متاح قبل ربط التخزين.</span>
                       </div>
-                      <label className="grid gap-2 text-sm font-bold">الاسم الكامل<input required autoComplete="name" value={name} onChange={e => setName(e.target.value)} placeholder="اكتب اسمك الكامل" className="rounded-xl border border-[#344b70] bg-[#101a2d] px-4 py-3 outline-none focus:border-blue-500" /></label>
+                      <label className="grid gap-2 text-sm font-bold">الاسم الكامل<input required autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="اكتب اسمك الكامل" className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500" /></label>
                     </>
                   )}
-                  <label className="grid gap-2 text-sm font-bold"><span className="flex items-center gap-2"><Mail size={16} className="text-blue-400" /> البريد الإلكتروني</span><input required type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@example.com" className="rounded-xl border border-[#344b70] bg-[#101a2d] px-4 py-3 outline-none focus:border-blue-500" /></label>
-                  {activeMode === "signup" && (
+                  <label className="grid gap-2 text-sm font-bold"><span className="flex items-center gap-2"><Mail size={16} className="text-blue-400" /> البريد الإلكتروني</span><input required type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500" /></label>
+                  {view === "signup" && (
                     <>
-                      <label className="grid gap-2 text-sm font-bold"><span className="flex items-center gap-2"><Phone size={16} className="text-blue-400" /> رقم الهاتف</span><input required type="tel" autoComplete="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="رقم الهاتف للتواصل والتوصيل" className="rounded-xl border border-[#344b70] bg-[#101a2d] px-4 py-3 outline-none focus:border-blue-500" /></label>
-                      <label className="grid gap-2 text-sm font-bold"><span className="flex items-center gap-2"><MapPin size={16} className="text-blue-400" /> المحافظة</span><select required value={governorate} onChange={e => setGovernorate(e.target.value)} className="rounded-xl border border-[#344b70] bg-[#101a2d] px-4 py-3 outline-none focus:border-blue-500">{governorates.map(g => <option key={g} value={g}>{g}</option>)}</select></label>
-                      <label className="grid gap-2 text-sm font-bold">عنوان التوصيل (اختياري)<input autoComplete="street-address" value={address} onChange={e => setAddress(e.target.value)} placeholder="الحي والشارع وأقرب نقطة دالة" className="rounded-xl border border-[#344b70] bg-[#101a2d] px-4 py-3 outline-none focus:border-blue-500" /></label>
+                      <label className="grid gap-2 text-sm font-bold"><span className="flex items-center gap-2"><Phone size={16} className="text-blue-400" /> رقم الهاتف</span><input required type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="رقم الهاتف للتواصل والتوصيل" className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500" /></label>
+                      <label className="grid gap-2 text-sm font-bold"><span className="flex items-center gap-2"><MapPin size={16} className="text-blue-400" /> المحافظة</span><select required value={governorate} onChange={(e) => setGovernorate(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500">{governorates.map((g) => <option key={g} value={g}>{g}</option>)}</select></label>
+                      <label className="grid gap-2 text-sm font-bold sm:col-span-2">عنوان التوصيل<input autoComplete="street-address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="الحي والشارع وأقرب نقطة دالة" className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500" /></label>
                     </>
                   )}
-                  <label className="grid gap-2 text-sm font-bold"><span className="flex items-center gap-2"><LockKeyhole size={16} className="text-blue-400" /> كلمة المرور</span><input required minLength={8} type="password" autoComplete={activeMode === "signup" ? "new-password" : "current-password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="8 أحرف على الأقل" className="rounded-xl border border-[#344b70] bg-[#101a2d] px-4 py-3 outline-none focus:border-blue-500" /></label>
-                  {activeMode === "signup" && <label className="flex items-start gap-2 text-xs leading-6 text-slate-400"><input required type="checkbox" className="mt-1 accent-blue-500" /> أوافق على شروط الاستخدام وسياسة الخصوصية التجريبية.</label>}
-                  <button type="submit" className="mt-1 flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 font-extrabold text-white shadow-lg shadow-blue-950/30 hover:bg-blue-500">{activeMode === "signup" ? "إنشاء الحساب" : "تسجيل الدخول"} <ArrowRight size={17} /></button>
-                  {notice && <p role="status" className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-sm leading-6 text-amber-200">{notice}</p>}
+                  <label className="grid gap-2 text-sm font-bold sm:col-span-2"><span className="flex items-center gap-2"><LockKeyhole size={16} className="text-blue-400" /> كلمة المرور</span><input required minLength={8} type="password" autoComplete={view === "signup" ? "new-password" : "current-password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="8 أحرف على الأقل" className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500" /></label>
+                  <button type="submit" className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 font-extrabold text-white transition hover:bg-blue-500 sm:col-span-2">{view === "signup" ? "متابعة إعداد الحساب" : "متابعة تسجيل الدخول"} <ArrowRight size={17} /></button>
                 </form>
+                {notice && <p role="status" className="mt-4 rounded-xl border border-amber-400/25 bg-amber-400/5 p-3 text-sm leading-6 text-amber-100">{notice}</p>}
               </>
             )}
-            <p className="mt-5 text-center text-[11px] leading-6 text-slate-500">نسخة تجريبية: لا يوجد خادم مصادقة متصل. لا تستخدم كلمة مرورك الحقيقية؛ البيانات محفوظة محلياً على هذا الجهاز فقط.</p>
+
+            {view === "profile" && (
+              <div className="grid gap-5">
+                <div className="flex flex-col items-center rounded-2xl border border-slate-700 bg-slate-950/60 p-5">
+                  <div className="grid h-28 w-28 place-items-center overflow-hidden rounded-full border-4 border-blue-400/30 bg-blue-500/10 text-blue-300">
+                    {avatar ? <img src={avatar} alt="معاينة الصورة الشخصية" className="h-full w-full object-cover" /> : <CircleUserRound size={62} />}
+                  </div>
+                  <label className="mt-4 flex cursor-pointer items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-extrabold text-white hover:bg-blue-500"><ImagePlus size={17} /> تغيير الصورة الشخصية<input type="file" accept="image/*" className="hidden" onChange={saveAvatar} /></label>
+                  <p className="mt-3 text-center text-xs leading-5 text-slate-500">تظهر الصورة للمعاينة في هذه الصفحة فقط، ولن تُحفظ أو تُرفع حتى ربط التخزين.</p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="grid gap-2 text-sm font-bold">تغيير الاسم<input value={name} onChange={(e) => setName(e.target.value)} placeholder="الاسم الذي سيظهر في ملفك" className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500" /></label>
+                  <label className="grid gap-2 text-sm font-bold">البريد الإلكتروني<input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="البريد الإلكتروني" className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500" /></label>
+                  <label className="grid gap-2 text-sm font-bold">رقم الهاتف<input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder="رقم الهاتف" className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500" /></label>
+                  <label className="grid gap-2 text-sm font-bold">المحافظة<select value={governorate} onChange={(e) => setGovernorate(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500">{governorates.map((g) => <option key={g}>{g}</option>)}</select></label>
+                  <label className="grid gap-2 text-sm font-bold sm:col-span-2">عنوان التوصيل<input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="الحي والشارع وأقرب نقطة دالة" className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500" /></label>
+                </div>
+                <button type="button" onClick={() => setSavedNotice("تم تحديث المعاينة داخل الصفحة فقط. الحفظ الدائم يتطلب ربط قاعدة البيانات.")} className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 font-extrabold text-white hover:bg-blue-500"><Save size={17} /> تطبيق التعديلات على المعاينة</button>
+                {savedNotice && <p role="status" className="rounded-xl border border-amber-400/25 bg-amber-400/5 p-3 text-sm leading-6 text-amber-100">{savedNotice}</p>}
+                <p className="text-xs leading-6 text-slate-500">واجهة الملف الشخصي قيد التجهيز؛ لا يوجد حساب موثّق أو حفظ دائم للبيانات حاليًا.</p>
+              </div>
+            )}
+
+            {view === "settings" && (
+              <div className="grid gap-5">
+                <div className="rounded-2xl border border-slate-700 bg-slate-950/60 p-4">
+                  <div className="flex items-center gap-2 font-extrabold"><Palette size={19} className="text-blue-400" /> ألوان واجهة حسابك</div>
+                  <p className="mt-2 text-sm leading-6 text-slate-400">اختر اللون وشاهد المعاينة مباشرة. الاختيار لا يُحفظ بعد مغادرة الصفحة قبل ربط قاعدة البيانات.</p>
+                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {themes.map((item) => <button type="button" key={item.value} onClick={() => setTheme(item.value)} className={`flex items-center gap-2 rounded-xl border p-3 text-sm font-bold ${theme === item.value ? "border-white/60 bg-white/10 text-white" : "border-slate-700 text-slate-400 hover:border-slate-500"}`}><span className="h-5 w-5 rounded-full ring-2 ring-white/10" style={{ backgroundColor: item.swatch }} />{item.name}</button>)}
+                  </div>
+                  <div className="mt-4 rounded-xl p-4 text-white" style={{ background: `linear-gradient(115deg, ${activeTheme.swatch}, #0f172a 125%)` }}><b>معاينة اللون المختار</b><p className="mt-1 text-sm text-white/80">عبيد ستور — ملفك الشخصي بإعداداتك المفضلة</p></div>
+                </div>
+                <div className="rounded-2xl border border-slate-700 p-4">
+                  <h3 className="font-extrabold">الخصوصية ومعرّف الحساب</h3>
+                  <p className="mt-2 text-sm leading-7 text-slate-400">سيُنشأ لكل حساب معرّف مستخدم فريد من قاعدة البيانات عند ربط المصادقة. لا نعرض عنوان IP كمعرّف للمستخدم لأنه قد يتغير أو يكون مشتركًا بين عدة أشخاص.</p>
+                </div>
+                <p className="text-xs leading-6 text-slate-500">إعدادات الألوان حاليًا معاينة داخل الصفحة فقط. الحفظ بين الزيارات يتطلب تخزين تفضيلات المستخدم في قاعدة البيانات.</p>
+              </div>
+            )}
+
+            {view === "tracking" && (
+              <div className="grid gap-4">
+                <div className="rounded-2xl border border-slate-700 bg-slate-950/60 p-4">
+                  <div className="flex items-center gap-3"><span className="grid h-12 w-12 place-items-center rounded-xl bg-blue-600 text-white"><PackageSearch size={23} /></span><div><h2 className="font-extrabold">تتبع الطلب</h2><p className="mt-1 text-sm text-slate-400">أدخل رقم الطلب عند توفر نظام الطلبات.</p></div></div>
+                </div>
+                <form className="grid gap-3 sm:grid-cols-[1fr_auto]" onSubmit={submitTracking}>
+                  <input value={trackingCode} onChange={(e) => setTrackingCode(e.target.value)} placeholder="رقم الطلب" className="min-w-0 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500" />
+                  <button type="submit" className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-extrabold text-white hover:bg-blue-500">التحقق من الحالة <ArrowRight size={16} /></button>
+                </form>
+                {notice && <p role="status" className="rounded-xl border border-amber-400/25 bg-amber-400/5 p-3 text-sm leading-6 text-amber-100">{notice}</p>}
+                <p className="text-sm leading-7 text-slate-400">حالة الطلب الفعلية ستظهر بعد ربط قاعدة البيانات ونظام تحديث مراحل التجهيز والشحن. لن نعرض حالات طلب وهمية.</p>
+              </div>
+            )}
           </div>
         </section>
+        <p className="mt-4 text-center text-xs leading-6 text-slate-500">تنبيه واضح: واجهات الحساب والإعدادات وتتبع الطلب قيد التجهيز وليست متصلة بخادم أو قاعدة بيانات حتى الآن.</p>
       </div>
     </main>
   );
