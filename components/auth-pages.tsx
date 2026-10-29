@@ -99,19 +99,32 @@ export function AuthPage() {
           </div>
 
           <div className="border-b border-slate-700 bg-slate-900 px-3 pt-3">
-            <p className="mb-2 px-1 text-xs font-extrabold tracking-wide text-slate-400">خيارات الحساب السريعة</p>
+            <p className="mb-2 px-1 text-xs font-extrabold tracking-wide text-slate-400">الدخول والطلبات والمظهر</p>
             <nav aria-label="تسجيل الدخول وتتبع الطلب وتغيير الألوان" className="grid grid-cols-1 gap-2 pb-3 sm:grid-cols-3">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button key={item.id} type="button" onClick={() => showView(item.id)} aria-current={view === item.id ? "page" : undefined}
-                  className={`flex items-center justify-center gap-2 rounded-xl px-2 py-3 text-xs font-extrabold transition sm:text-sm ${view === item.id ? "bg-blue-600 text-white shadow-lg shadow-blue-950/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}>
-                  <Icon size={16} /> {item.label}
-                </button>
-              );
-            })}
+              {navItems.filter((item) => ["login", "tracking", "settings"].includes(item.id)).map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button key={item.id} type="button" onClick={() => showView(item.id)} aria-current={view === item.id ? "page" : undefined}
+                    className={`flex items-center justify-center gap-2 rounded-xl px-2 py-3 text-xs font-extrabold transition sm:text-sm ${view === item.id ? "bg-blue-600 text-white shadow-lg shadow-blue-950/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}>
+                    <Icon size={16} /> {item.label}
+                  </button>
+                );
+              })}
             </nav>
-            <nav aria-label="الملف الشخصي وإنشاء الحساب" className="grid grid-cols-2 gap-2 pb-3 sm:grid-cols-2">
+            <nav aria-label="إنشاء الحساب والملف الشخصي" className="grid grid-cols-2 gap-2 pb-3">
+              {navItems.filter((item) => ["signup", "profile"].includes(item.id)).map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button key={item.id} type="button" onClick={() => showView(item.id)} aria-current={view === item.id ? "page" : undefined}
+                    className={`flex items-center justify-center gap-2 rounded-xl px-2 py-3 text-xs font-extrabold transition sm:text-sm ${view === item.id ? "bg-blue-600 text-white shadow-lg shadow-blue-950/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}>
+                    <Icon size={16} /> {item.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          <div className="p-4 sm:p-7">
             {(view === "login" || view === "signup") && (
               <>
                 <div className="mb-5 rounded-2xl border border-amber-400/25 bg-amber-400/5 p-3 text-sm leading-6 text-amber-100">
