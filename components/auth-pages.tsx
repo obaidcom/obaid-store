@@ -16,6 +16,8 @@ type View = "login" | "signup" | "profile" | "settings" | "tracking";
 
 export function AuthPage() {
   const [view, setView] = useState<View>("login");
+  // This remains false until a real authentication provider verifies the user.
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [notice, setNotice] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -99,7 +101,7 @@ export function AuthPage() {
           </div>
 
           <div className="border-b border-slate-700 bg-slate-900 px-4 py-4 sm:px-6">
-            {false ? (
+            {isAuthenticated ? (
               <nav aria-label="خيارات الحساب" className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 {navItems.filter((item) => ["profile", "tracking", "settings"].includes(item.id)).map((item) => {
                   const Icon = item.icon;
