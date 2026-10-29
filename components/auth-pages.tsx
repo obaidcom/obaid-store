@@ -153,23 +153,37 @@ export function AuthPage() {
 
             {view === "profile" && (
               <div className="grid gap-5">
-                <div className="flex flex-col items-center rounded-2xl border border-slate-700 bg-slate-950/60 p-5">
-                  <div className="grid h-28 w-28 place-items-center overflow-hidden rounded-full border-4 border-blue-400/30 bg-blue-500/10 text-blue-300">
-                    {avatar ? <img src={avatar} alt="معاينة الصورة الشخصية" className="h-full w-full object-cover" /> : <CircleUserRound size={62} />}
+                <div className="overflow-hidden rounded-3xl border border-slate-700 bg-slate-950/60">
+                  <div className="h-24 bg-gradient-to-l from-blue-700 via-blue-600 to-sky-400 sm:h-32" />
+                  <div className="-mt-12 flex flex-col items-center px-5 pb-6 sm:-mt-14">
+                    <div className="grid h-24 w-24 place-items-center overflow-hidden rounded-full border-4 border-slate-900 bg-slate-800 text-blue-300 shadow-xl sm:h-28 sm:w-28">
+                      {avatar ? <img src={avatar} alt="الصورة الشخصية" className="h-full w-full object-cover" /> : <CircleUserRound size={58} />}
+                    </div>
+                    <h2 className="mt-3 text-xl font-black text-white">{name.trim() || "ملفي الشخصي"}</h2>
+                    <p className="mt-1 text-sm text-slate-400">{email.trim() || "أضف بريدك الإلكتروني لإكمال بياناتك"}</p>
+                    <label className="mt-4 flex cursor-pointer items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-extrabold text-white shadow-lg shadow-blue-950/30 transition hover:bg-blue-500">
+                      <ImagePlus size={17} /> إضافة أو تغيير الصورة الشخصية
+                      <input type="file" accept="image/*" className="hidden" onChange={saveAvatar} />
+                    </label>
+                    <p className="mt-2 text-center text-xs leading-5 text-slate-500">صورة JPG أو PNG، بحد أقصى 3 ميغابايت. الحفظ الدائم يتطلب تفعيل التخزين.</p>
                   </div>
-                  <label className="mt-4 flex cursor-pointer items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-extrabold text-white hover:bg-blue-500"><ImagePlus size={17} /> تغيير الصورة الشخصية<input type="file" accept="image/*" className="hidden" onChange={saveAvatar} /></label>
-                  <p className="mt-3 text-center text-xs leading-5 text-slate-500">تظهر الصورة للمعاينة في هذه الصفحة فقط، ولن تُحفظ أو تُرفع حتى ربط التخزين.</p>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="grid gap-2 text-sm font-bold">تغيير الاسم<input value={name} onChange={(e) => setName(e.target.value)} placeholder="الاسم الذي سيظهر في ملفك" className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500" /></label>
-                  <label className="grid gap-2 text-sm font-bold">البريد الإلكتروني<input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="البريد الإلكتروني" className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500" /></label>
-                  <label className="grid gap-2 text-sm font-bold">رقم الهاتف<input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder="رقم الهاتف" className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500" /></label>
-                  <label className="grid gap-2 text-sm font-bold">المحافظة<select value={governorate} onChange={(e) => setGovernorate(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500">{governorates.map((g) => <option key={g}>{g}</option>)}</select></label>
-                  <label className="grid gap-2 text-sm font-bold sm:col-span-2">عنوان التوصيل<input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="الحي والشارع وأقرب نقطة دالة" className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500" /></label>
+
+                <div className="rounded-2xl border border-slate-700 bg-slate-900/70 p-4 sm:p-5">
+                  <div className="mb-4 flex items-center gap-3 border-b border-slate-700 pb-4">
+                    <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-500/15 text-blue-300"><UserCog size={20}/></span>
+                    <div><h3 className="font-extrabold text-white">البيانات الشخصية</h3><p className="mt-1 text-xs text-slate-400">حدّث معلوماتك لتسهيل التواصل والتوصيل.</p></div>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="grid gap-2 text-sm font-bold text-slate-200">الاسم الكامل<input value={name} onChange={(e) => setName(e.target.value)} placeholder="الاسم الذي سيظهر في ملفك" className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15" /></label>
+                    <label className="grid gap-2 text-sm font-bold text-slate-200">البريد الإلكتروني<input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="البريد الإلكتروني" className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15" /></label>
+                    <label className="grid gap-2 text-sm font-bold text-slate-200">رقم الهاتف<input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder="رقم الهاتف" className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15" /></label>
+                    <label className="grid gap-2 text-sm font-bold text-slate-200">المحافظة<select value={governorate} onChange={(e) => setGovernorate(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15">{governorates.map((g) => <option key={g} value={g}>{g}</option>)}</select></label>
+                    <label className="grid gap-2 text-sm font-bold text-slate-200 sm:col-span-2">عنوان التوصيل<input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="الحي والشارع وأقرب نقطة دالة" className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15" /></label>
+                  </div>
+                  <button type="button" onClick={() => setSavedNotice("تم تحديث المعاينة داخل الصفحة فقط. الحفظ الدائم يتطلب ربط قاعدة البيانات.")} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-l from-blue-700 to-blue-500 py-3.5 font-extrabold text-white shadow-lg shadow-blue-950/20 transition hover:from-blue-600 hover:to-sky-500"><Save size={17} /> حفظ التعديلات</button>
+                  {savedNotice && <p role="status" className="mt-3 rounded-xl border border-amber-400/25 bg-amber-400/5 p-3 text-sm leading-6 text-amber-100">{savedNotice}</p>}
                 </div>
-                <button type="button" onClick={() => setSavedNotice("تم تحديث المعاينة داخل الصفحة فقط. الحفظ الدائم يتطلب ربط قاعدة البيانات.")} className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 font-extrabold text-white hover:bg-blue-500"><Save size={17} /> تطبيق التعديلات على المعاينة</button>
-                {savedNotice && <p role="status" className="rounded-xl border border-amber-400/25 bg-amber-400/5 p-3 text-sm leading-6 text-amber-100">{savedNotice}</p>}
-                <p className="text-xs leading-6 text-slate-500">هذه معاينة لتصميم الملف الشخصي؛ الحفظ الدائم وتأكيد هوية الحساب يتطلبان تفعيل المصادقة وربط قاعدة البيانات.</p>
               </div>
             )}
 
