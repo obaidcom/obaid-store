@@ -66,7 +66,15 @@ export function CleanStore() {
  const add = (id:number, quantity=1) => {setCart(c=>({...c,[id]:(c[id]||0)+quantity}));setNotice("أُضيف "+quantity+" من المنتج إلى سلتك");window.setTimeout(()=>setNotice(""),2200);};
  const openProduct = (product:Product) => {setSelectedProduct(product);setSelectedImageIndex(0);setSelectedQuantity(1);};
  const toggleFavorite = (id:number) => setFavorites(f=>f.includes(id)?f.filter(x=>x!==id):[...f,id]);
- const scrollProducts = () => document.getElementById("products")?.scrollIntoView({behavior:"smooth"});
+ const scrollProducts = () => window.setTimeout(()=>document.getElementById("products")?.scrollIntoView({behavior:"smooth",block:"start"}),40);
+ const selectCategory = (name:string) => {
+  setCategory(name);
+  setFavoritesOnly(false);
+  setQuery("");
+  setNotice(name==="الكل"?"تم عرض جميع المنتجات":"تم اختيار قسم "+name);
+  window.setTimeout(()=>setNotice(""),1800);
+  scrollProducts();
+ };
  return <main dir="rtl" data-theme={theme} className="store-shell min-h-screen bg-[#101a2d] text-[#e7edf8]">
   <div className="bg-[#123b91] px-4 py-2 text-center text-xs font-bold text-white">تسوّق براحة — الدفع عند الاستلام متاح ضمن خيارات المتجر التجريبية</div>
   <header className="sticky top-0 z-40 border-b border-[#2b3e5d] bg-[#1646a8] text-white shadow-lg shadow-blue-950/10">
@@ -128,7 +136,7 @@ export function CleanStore() {
   </section>
   <section id="categories" className="mx-auto max-w-7xl px-4 py-5 md:px-6">
    <div className="mb-5 flex items-end justify-between"><div><span className="text-xs font-black text-blue-700">تصفّح كما تحب</span><h2 className="mt-1 text-2xl font-black md:text-3xl">تسوّق حسب القسم</h2></div><button onClick={()=>{setCategory("الكل");scrollProducts();}} className="text-xs font-extrabold text-blue-700">كل المنتجات ←</button></div>
-   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:gap-4">{categories.map(c=><button key={c.name} onClick={()=>{setCategory(c.name);scrollProducts();}} className={"group relative h-36 overflow-hidden rounded-2xl border text-right shadow-sm transition hover:-translate-y-1 hover:shadow-lg md:h-48 "+(category===c.name?"border-blue-500 ring-2 ring-blue-200":"border-[#304461]")}><img src={c.image} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"/><div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/35 to-transparent"/><span className="absolute bottom-4 right-4 text-lg font-black text-white">{c.name==="الكل"?"كل المنتجات":c.name}</span><span className="absolute bottom-4 left-4 rounded-full bg-[#1b2a43]/10 p-1.5 text-white backdrop-blur"><ArrowLeft size={15}/></span></button>)}</div>
+   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:gap-4">{categories.map(c=><button type="button" key={c.name} aria-pressed={category===c.name} onClick={()=>selectCategory(c.name)} className={"category-tile group relative isolate h-36 cursor-pointer overflow-hidden rounded-2xl border text-right shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg active:scale-[.98] md:h-48 "+(category===c.name?"is-selected border-blue-400 ring-2 ring-blue-400/70":"border-[#304461]")}><img src={c.image} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"/><div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-900/45 to-blue-950/10"/><span className="pointer-events-none absolute bottom-4 right-4 text-lg font-black text-white">{c.name==="الكل"?"كل المنتجات":c.name}</span><span aria-hidden="true" className="pointer-events-none absolute bottom-4 left-4 rounded-full border border-white/25 bg-blue-600/80 p-2 text-white shadow-lg backdrop-blur transition group-hover:-translate-x-1"><ArrowLeft size={15}/></span>{category===c.name&&<span className="pointer-events-none absolute right-3 top-3 rounded-full border border-white/25 bg-blue-600 px-2.5 py-1 text-[10px] font-extrabold text-white shadow-lg">القسم المحدد</span>}</button>)}</div>
   </section>
   <section className="mx-auto max-w-7xl px-4 py-5 md:px-6">
    <div className="flex flex-col gap-4 rounded-[22px] border border-[#2b3e5d] bg-gradient-to-l from-[#172b49] via-[#1a2a43] to-[#20385b] p-5 sm:flex-row sm:items-center sm:justify-between md:p-7"><div><span className="text-xs font-black text-blue-700">اختيارات تستحق الاكتشاف</span><h2 className="mt-1 text-xl font-black md:text-2xl">جدد أسلوبك بمنتجات مميزة</h2><p className="mt-2 text-sm text-slate-300">تعرّف على مجموعة من المنتجات التي اخترناها لك.</p></div><button onClick={scrollProducts} className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-extrabold text-white hover:bg-blue-800">اكتشف المنتجات<ArrowLeft size={17}/></button></div>
