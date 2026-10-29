@@ -71,11 +71,11 @@ export function AuthPage() {
   };
 
   const navItems: { id: View; label: string; icon: typeof LockKeyhole }[] = [
-    { id: "login", label: "دخول", icon: LockKeyhole },
-    { id: "signup", label: "حساب جديد", icon: UserRound },
-    { id: "profile", label: "ملفي الشخصي", icon: UserCog },
-    { id: "settings", label: "الإعدادات", icon: Settings2 },
+    { id: "login", label: "تسجيل الدخول", icon: LockKeyhole },
     { id: "tracking", label: "تتبع الطلب", icon: PackageSearch },
+    { id: "settings", label: "تغيير الألوان", icon: Palette },
+    { id: "signup", label: "إنشاء حساب", icon: UserRound },
+    { id: "profile", label: "ملفي الشخصي", icon: UserCog },
   ];
 
   return (
@@ -98,7 +98,9 @@ export function AuthPage() {
             </div>
           </div>
 
-          <nav aria-label="خيارات الحساب" className="grid grid-cols-2 gap-2 border-b border-slate-700 bg-slate-900 p-3 sm:grid-cols-5">
+          <div className="border-b border-slate-700 bg-slate-900 px-3 pt-3">
+            <p className="mb-2 px-1 text-xs font-extrabold tracking-wide text-slate-400">خيارات الحساب السريعة</p>
+            <nav aria-label="تسجيل الدخول وتتبع الطلب وتغيير الألوان" className="grid grid-cols-1 gap-2 pb-3 sm:grid-cols-3">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -108,9 +110,8 @@ export function AuthPage() {
                 </button>
               );
             })}
-          </nav>
-
-          <div className="p-4 sm:p-7">
+            </nav>
+            <nav aria-label="الملف الشخصي وإنشاء الحساب" className="grid grid-cols-2 gap-2 pb-3 sm:grid-cols-2">
             {(view === "login" || view === "signup") && (
               <>
                 <div className="mb-5 rounded-2xl border border-amber-400/25 bg-amber-400/5 p-3 text-sm leading-6 text-amber-100">
