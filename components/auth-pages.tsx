@@ -93,35 +93,28 @@ export function AuthPage() {
               </div>
               <div>
                 <h1 className="text-xl font-black sm:text-2xl">{navItems.find((item) => item.id === view)?.label === "دخول" ? "تسجيل الدخول" : navItems.find((item) => item.id === view)?.label}</h1>
-                <p className="mt-1 text-sm leading-6 text-white/80">حسابك وإعداداتك في مكان واحد، دون تكرار صفحات الحساب.</p>
+                <p className="mt-1 text-sm leading-6 text-white/80">أنشئ حسابك أو سجّل الدخول للوصول إلى ملفك الشخصي وإعداداتك وطلباتك.</p>
               </div>
             </div>
           </div>
 
-          <div className="border-b border-slate-700 bg-slate-900 px-3 pt-3">
-            <p className="mb-2 px-1 text-xs font-extrabold tracking-wide text-slate-400">الدخول والطلبات والمظهر</p>
-            <nav aria-label="تسجيل الدخول وتتبع الطلب وتغيير الألوان" className="grid grid-cols-1 gap-2 pb-3 sm:grid-cols-3">
-              {navItems.filter((item) => ["login", "tracking", "settings"].includes(item.id)).map((item) => {
-                const Icon = item.icon;
-                return (
-                  <button key={item.id} type="button" onClick={() => showView(item.id)} aria-current={view === item.id ? "page" : undefined}
-                    className={`flex items-center justify-center gap-2 rounded-xl px-2 py-3 text-xs font-extrabold transition sm:text-sm ${view === item.id ? "bg-blue-600 text-white shadow-lg shadow-blue-950/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}>
-                    <Icon size={16} /> {item.label}
-                  </button>
-                );
-              })}
-            </nav>
-            <nav aria-label="إنشاء الحساب والملف الشخصي" className="grid grid-cols-2 gap-2 pb-3">
-              {navItems.filter((item) => ["signup", "profile"].includes(item.id)).map((item) => {
-                const Icon = item.icon;
-                return (
-                  <button key={item.id} type="button" onClick={() => showView(item.id)} aria-current={view === item.id ? "page" : undefined}
-                    className={`flex items-center justify-center gap-2 rounded-xl px-2 py-3 text-xs font-extrabold transition sm:text-sm ${view === item.id ? "bg-blue-600 text-white shadow-lg shadow-blue-950/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}>
-                    <Icon size={16} /> {item.label}
-                  </button>
-                );
-              })}
-            </nav>
+          <div className="border-b border-slate-700 bg-slate-900 px-4 py-4 sm:px-6">
+            {false ? (
+              <nav aria-label="خيارات الحساب" className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                {navItems.filter((item) => ["profile", "tracking", "settings"].includes(item.id)).map((item) => {
+                  const Icon = item.icon;
+                  return <button key={item.id} type="button" onClick={() => showView(item.id)} aria-current={view === item.id ? "page" : undefined} className={`flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-extrabold transition ${view === item.id ? "bg-blue-600 text-white shadow-lg shadow-blue-950/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}><Icon size={17} />{item.label}</button>;
+                })}
+              </nav>
+            ) : (
+              <>
+                <p className="mb-3 text-center text-sm font-bold text-slate-300">أهلاً بك في عبيد ستور</p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <button type="button" onClick={() => showView("login")} className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-extrabold transition ${view === "login" ? "bg-blue-600 text-white shadow-lg shadow-blue-950/30" : "border border-slate-700 bg-slate-950/60 text-slate-200 hover:border-blue-500"}`}><LockKeyhole size={17}/> تسجيل الدخول</button>
+                  <button type="button" onClick={() => showView("signup")} className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-extrabold transition ${view === "signup" ? "bg-blue-600 text-white shadow-lg shadow-blue-950/30" : "border border-slate-700 bg-slate-950/60 text-slate-200 hover:border-blue-500"}`}><UserRound size={17}/> إنشاء حساب جديد</button>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="p-4 sm:p-7">
@@ -129,7 +122,7 @@ export function AuthPage() {
               <>
                 <div className="mb-5 rounded-2xl border border-amber-400/25 bg-amber-400/5 p-3 text-sm leading-6 text-amber-100">
                   <div className="flex items-center gap-2 font-extrabold"><ShieldCheck size={17} /> توضيح مهم قبل المتابعة</div>
-                  هذه واجهة قيد التجهيز للربط بقاعدة البيانات. تسجيل الدخول وإنشاء الحساب غير مفعّلين حاليًا، ولن يتم حفظ بياناتك أو كلمة مرورك أو إرسالها.
+                  هذه واجهة الحساب قيد الربط. لا تدخل كلمة مرور حقيقية الآن؛ تسجيل الدخول وإنشاء الحساب لن يعملا فعليًا حتى تفعيل المصادقة الآمنة.
                 </div>
                 <div className="mb-5 flex rounded-xl border border-slate-700 bg-slate-950 p-1">
                   <button type="button" onClick={() => showView("login")} className={`flex-1 rounded-lg px-3 py-3 text-sm font-extrabold ${view === "login" ? "bg-blue-600 text-white" : "text-slate-400"}`}>تسجيل الدخول</button>
@@ -138,16 +131,6 @@ export function AuthPage() {
                 <form className="grid gap-4 sm:grid-cols-2" onSubmit={submitAuth}>
                   {view === "signup" && (
                     <>
-                      <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-700 bg-slate-950/60 p-4 sm:col-span-2">
-                        <div className="grid h-24 w-24 place-items-center overflow-hidden rounded-full border-4 border-blue-400/30 bg-blue-500/10 text-blue-300">
-                          {avatar ? <img src={avatar} alt="معاينة الصورة الشخصية" className="h-full w-full object-cover" /> : <CircleUserRound size={52} />}
-                        </div>
-                        <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-blue-400/30 bg-blue-500/10 px-4 py-3 text-sm font-bold text-blue-200 hover:bg-blue-500/20">
-                          <Camera size={17} /> اختيار صورة شخصية
-                          <input type="file" accept="image/*" className="hidden" onChange={saveAvatar} />
-                        </label>
-                        <span className="text-center text-xs text-slate-500">معاينة فقط؛ رفع الصورة إلى الخادم غير متاح قبل ربط التخزين.</span>
-                      </div>
                       <label className="grid gap-2 text-sm font-bold">الاسم الكامل<input required autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="اكتب اسمك الكامل" className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500" /></label>
                     </>
                   )}
@@ -184,7 +167,7 @@ export function AuthPage() {
                 </div>
                 <button type="button" onClick={() => setSavedNotice("تم تحديث المعاينة داخل الصفحة فقط. الحفظ الدائم يتطلب ربط قاعدة البيانات.")} className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 font-extrabold text-white hover:bg-blue-500"><Save size={17} /> تطبيق التعديلات على المعاينة</button>
                 {savedNotice && <p role="status" className="rounded-xl border border-amber-400/25 bg-amber-400/5 p-3 text-sm leading-6 text-amber-100">{savedNotice}</p>}
-                <p className="text-xs leading-6 text-slate-500">واجهة الملف الشخصي قيد التجهيز؛ لا يوجد حساب موثّق أو حفظ دائم للبيانات حاليًا.</p>
+                <p className="text-xs leading-6 text-slate-500">هذه معاينة لتصميم الملف الشخصي؛ الحفظ الدائم وتأكيد هوية الحساب يتطلبان تفعيل المصادقة وربط قاعدة البيانات.</p>
               </div>
             )}
 
@@ -221,7 +204,7 @@ export function AuthPage() {
             )}
           </div>
         </section>
-        <p className="mt-4 text-center text-xs leading-6 text-slate-500">تنبيه واضح: واجهات الحساب والإعدادات وتتبع الطلب قيد التجهيز وليست متصلة بخادم أو قاعدة بيانات حتى الآن.</p>
+        <p className="mt-4 text-center text-xs leading-6 text-slate-500">تسجيل الدخول وإنشاء الحساب غير متصلين بخدمة مصادقة حتى الآن؛ لذلك تبقى إعدادات الحساب وتتبع الطلب مخفية عن الزائر إلى حين تفعيل تسجيل الدخول الفعلي.</p>
       </div>
     </main>
   );
