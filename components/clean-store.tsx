@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Search, ShoppingBag, ShoppingCart, Heart, UserRound, CircleUserRound, Home, Menu, X, ArrowLeft, Truck, ShieldCheck, Headphones, ChevronLeft, Plus, Minus, Trash2, Sparkles, Sun, Moon, UserPlus, LockKeyhole, Mail, House, Layers3, Package, FileText, PhoneCall, MapPin, CreditCard, CheckCircle2, ClipboardList, Clock3, User, Save } from "lucide-react";
+import { Search, ShoppingBag, ShoppingCart, Heart, UserRound, CircleUserRound, Home, Menu, X, ArrowLeft, Truck, ShieldCheck, Headphones, ChevronLeft, Plus, Minus, Trash2, Sparkles, Sun, Moon, UserPlus, LockKeyhole, Mail, House, Layers3, Package, FileText, PhoneCall, CreditCard, CheckCircle2, ClipboardList, User, Save } from "lucide-react";
 
 type Product = { id:number; name:string; category:string; price:number; oldPrice?:number; image:string; badge?:string; };
 const productDetails:Record<number,{description:string;details:string[];gallery:string[]}> = {
@@ -50,7 +50,13 @@ export function CleanStore() {
  const [selectedQuantity,setSelectedQuantity] = useState(1);
  const [newsletterEmail,setNewsletterEmail] = useState("");
  const [newsletterNotice,setNewsletterNotice] = useState("");
- const [preferencesLoaded,setPreferencesLoaded] = useState(false);\n const [paymentMethod,setPaymentMethod] = useState<"sham-cash"|"syriatel-cash"|"cod">("cod");\n const [orders,setOrders] = useState<Array<{id:string;date:string;items:Array<{id:number;quantity:number}>;total:number;payment:string;status:string;name:string;phone:string;address:string}>>([]);\n const [trackingCode,setTrackingCode] = useState("");\n const [profile,setProfile] = useState({name:"",email:"",phone:"",governorate:"دمشق",address:""});\n const [profileNotice,setProfileNotice] = useState("");\n const [checkout,setCheckout] = useState({name:"",phone:"",governorate:"دمشق",address:"",notes:""});
+ const [preferencesLoaded,setPreferencesLoaded] = useState(false);
+ const [paymentMethod,setPaymentMethod] = useState<"sham-cash"|"syriatel-cash"|"cod">("cod");
+ const [orders,setOrders] = useState<Array<{id:string;date:string;items:Array<{id:number;quantity:number}>;total:number;payment:string;status:string;name:string;phone:string;address:string}>>([]);
+ const [trackingCode,setTrackingCode] = useState("");
+ const [profile,setProfile] = useState({name:"",email:"",phone:"",governorate:"دمشق",address:""});
+ const [profileNotice,setProfileNotice] = useState("");
+ const [checkout,setCheckout] = useState({name:"",phone:"",governorate:"دمشق",address:"",notes:""});
  const slides = [
   {eyebrow:"اختيارات هذا الموسم",title:"كل ما تحبّه،\nفي مكان واحد",desc:"اكتشف منتجات مختارة بعناية وأسعار واضحة وتجربة تسوّق عربية سهلة.",image:"https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=1600&q=85",cta:"اكتشف المنتجات"},
   {eyebrow:"تقنية تناسب يومك",title:"ارتقِ بتجربتك\nمع منتجات ذكية",desc:"إلكترونيات وإكسسوارات تجمع بين التصميم الجميل والاستخدام العملي.",image:"https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1600&q=85",cta:"تسوّق الإلكترونيات"},
@@ -66,7 +72,8 @@ export function CleanStore() {
  const add = (id:number, quantity=1) => {setCart(c=>({...c,[id]:(c[id]||0)+quantity}));setNotice("أُضيف "+quantity+" من المنتج إلى سلتك");window.setTimeout(()=>setNotice(""),2200);};
  const openProduct = (product:Product) => {setSelectedProduct(product);setSelectedImageIndex(0);setSelectedQuantity(1);};
  const toggleFavorite = (id:number) => setFavorites(f=>f.includes(id)?f.filter(x=>x!==id):[...f,id]);
- const scrollProducts = () => window.setTimeout(()=>document.getElementById("products")?.scrollIntoView({behavior:"smooth",block:"start"}),40);\n const placeDemoOrder = (e:FormEvent<HTMLFormElement>) => {e.preventDefault();if(!cartItems.length){setNotice("السلة فارغة");return;}const id="OB-"+Math.random().toString(36).slice(2,8).toUpperCase();const paymentLabel=paymentMethod==="sham-cash"?"شام كاش":paymentMethod==="syriatel-cash"?"سيريتل كاش":"الدفع عند الاستلام";const order={id,date:new Date().toISOString(),items:cartItems.map(p=>({id:p.id,quantity:cart[p.id]})),total,payment:paymentLabel,status:"تم استلام الطلب (تجريبي)",name:checkout.name,phone:checkout.phone,address:checkout.governorate+" - "+checkout.address};setOrders(o=>[order,...o]);setProfile(p=>({...p,name:checkout.name,phone:checkout.phone,governorate:checkout.governorate,address:checkout.address}));setCart({});setTrackingCode(id);setDrawer("tracking");setNotice("تم إنشاء طلب تجريبي برقم "+id);};
+ const scrollProducts = () => window.setTimeout(()=>document.getElementById("products")?.scrollIntoView({behavior:"smooth",block:"start"}),40);
+ const placeDemoOrder = (e:FormEvent<HTMLFormElement>) => {e.preventDefault();if(!cartItems.length){setNotice("السلة فارغة");return;}const id="OB-"+Math.random().toString(36).slice(2,8).toUpperCase();const paymentLabel=paymentMethod==="sham-cash"?"شام كاش":paymentMethod==="syriatel-cash"?"سيريتل كاش":"الدفع عند الاستلام";const order={id,date:new Date().toISOString(),items:cartItems.map(p=>({id:p.id,quantity:cart[p.id]})),total,payment:paymentLabel,status:"تم استلام الطلب (تجريبي)",name:checkout.name,phone:checkout.phone,address:checkout.governorate+" - "+checkout.address};setOrders(o=>[order,...o]);setProfile(p=>({...p,name:checkout.name,phone:checkout.phone,governorate:checkout.governorate,address:checkout.address}));setCart({});setTrackingCode(id);setDrawer("tracking");setNotice("تم إنشاء طلب تجريبي برقم "+id);};
  const selectCategory = (name:string) => {
   setCategory(name);
   setFavoritesOnly(false);
