@@ -4,9 +4,7 @@ import Link from "next/link";
 import { useState, type FormEvent, type ChangeEvent } from "react";
 import { ArrowRight, Camera, CheckCircle2, CircleUserRound, LockKeyhole, Mail, UserRound } from "lucide-react";
 
-type AuthPageProps = { mode: "login" | "signup" };
-
-export function AuthPage({ mode }: AuthPageProps) {
+export function AuthPage() {
   const [activeMode, setActiveMode] = useState<"login" | "signup">("login");
   const [created, setCreated] = useState(false);
   const [notice, setNotice] = useState("");
