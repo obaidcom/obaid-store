@@ -41,8 +41,6 @@ export function CleanStore() {
  const [notice,setNotice] = useState("");
  const [slide,setSlide] = useState(0);
  const [theme,setTheme] = useState<"dark"|"light">("dark");
- const [accountMode,setAccountMode] = useState<"login"|"signup">("signup");
- const [accountNotice,setAccountNotice] = useState("");
  const [sortBy,setSortBy] = useState<"featured"|"price-low"|"price-high"|"name">("featured");
  const [favoritesOnly,setFavoritesOnly] = useState(false);
  const [selectedProduct,setSelectedProduct] = useState<Product|null>(null);
