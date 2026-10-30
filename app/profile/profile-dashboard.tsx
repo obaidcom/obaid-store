@@ -4,9 +4,9 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import {
   ArrowRight, UserRound, Package, MapPin, Heart, FileText, ShieldCheck,
-  Headphones, Settings, Camera, ChevronLeft, Bell, LogOut, Pencil,
-  ShoppingBag, Clock3, Truck, CheckCircle2, CreditCard, LockKeyhole,
-  Mail, Phone, Plus, CircleHelp, Gift, Star, WalletCards
+  Headphones, Settings, Camera, ChevronLeft, Pencil, ShoppingBag, Clock3,
+  Truck, CheckCircle2, LockKeyhole, Mail, Phone, Plus, CircleHelp, Gift,
+  WalletCards
 } from "lucide-react";
 
 type ProfileUser = { name: string; email: string; image: string; signedIn: boolean };
