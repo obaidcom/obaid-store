@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import {
@@ -69,7 +68,7 @@ export default function ProfileDashboard({ user }: { user: ProfileUser }) {
             <div className="flex items-center gap-4 sm:gap-5">
               <div className="relative shrink-0">
                 <button type="button" onClick={() => fileRef.current?.click()} className="group relative grid h-20 w-20 place-items-center overflow-hidden rounded-[25px] border-2 border-white/40 bg-white/15 text-3xl font-black shadow-xl sm:h-24 sm:w-24" aria-label="تغيير الصورة الشخصية">
-                  {avatar ? <Image src={avatar} alt="الصورة الشخصية" fill unoptimized className="object-cover"/> : initials}
+                  {avatar ? <span aria-label="الصورة الشخصية" className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url("${avatar}")` }}/> : initials}
                   <span className="absolute inset-0 grid place-items-center bg-slate-950/45 opacity-0 transition group-hover:opacity-100"><Camera size={23}/></span>
                 </button>
                 <button type="button" onClick={() => fileRef.current?.click()} className="absolute -bottom-2 -left-2 grid h-8 w-8 place-items-center rounded-xl border-2 border-[#17458d] bg-white text-blue-700 shadow" aria-label="رفع صورة"><Camera size={15}/></button>
