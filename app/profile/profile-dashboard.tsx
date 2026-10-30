@@ -159,14 +159,19 @@ export default function ProfileDashboard() {
   if (loading) return <main dir="rtl" className="min-h-screen bg-[#f3f6fc] p-8 text-center text-slate-600">جارٍ تحميل حسابك...</main>;
 
   if (!configured || !user) return (
-    <main dir="rtl" className="min-h-screen bg-[#f3f6fc] px-4 py-10">
-      <div className="mx-auto max-w-xl rounded-3xl border border-slate-200 bg-white p-7 text-center shadow-sm">
-        <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-blue-50 text-blue-700"><UserRound size={30}/></div>
-        <h1 className="mt-4 text-2xl font-black text-slate-900">الملف الشخصي</h1>
-        <p className="mt-2 text-sm leading-7 text-slate-500">{!configured ? "إعدادات الاتصال بقاعدة البيانات غير مكتملة." : "سجّل الدخول أولاً للوصول إلى ملفك الشخصي وطلباتك."}</p>
-        <Link href="/account" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-bold text-white">تسجيل الدخول <ChevronLeft size={17}/></Link>
-        <Link href="/" className="mt-4 block text-sm font-bold text-blue-700">العودة إلى المتجر</Link>
-      </div>
+    <main dir="rtl" className="min-h-[65vh] bg-[#f3f6fc] px-4 py-12">
+      <section className="mx-auto flex w-full max-w-md flex-col items-center rounded-[28px] border border-blue-100 bg-white p-7 text-center shadow-[0_18px_60px_rgba(15,55,110,.10)] sm:p-9">
+        <span className="grid h-16 w-16 place-items-center rounded-2xl bg-blue-50 text-blue-700"><UserRound size={30}/></span>
+        <p className="mt-5 text-xs font-black tracking-wide text-blue-600">OBAID STORE</p>
+        <h1 className="mt-2 text-2xl font-black text-[#10213e]">مرحباً بك في عبيد ستور</h1>
+        <p className="mt-3 text-sm leading-7 text-slate-500">سجّل الدخول أو أنشئ حساباً للوصول إلى ملفك الشخصي وطلباتك.</p>
+        <div className="mt-7 grid w-full gap-3">
+          <Link href="/account" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-100 transition hover:bg-blue-700">تسجيل الدخول <ChevronLeft size={17}/></Link>
+          <Link href="/account?mode=signup" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-5 py-3 text-sm font-black text-blue-800 transition hover:bg-blue-100">إنشاء حساب جديد <UserRound size={17}/></Link>
+        </div>
+        {!configured && <p className="mt-4 text-xs text-amber-700">تسجيل الدخول غير متاح حالياً بسبب إعدادات الاتصال.</p>}
+        <Link href="/" className="mt-6 text-xs font-bold text-slate-400 transition hover:text-blue-700">العودة إلى المتجر</Link>
+      </section>
     </main>
   );
 
