@@ -1,2 +1,2 @@
-import { ProfileDashboard } from "@/components/profile-dashboard";
-export default function ProfilePage() { return <ProfileDashboard />; }
+import { AccountPortal } from "@/components/account-portal";
+export default function ProfilePage() { return <AccountPortal />; }
