@@ -565,3 +565,11 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 @media(prefers-reduced-motion:reduce){
   .storefront-root *{transition-duration:.01ms!important;animation-duration:.01ms!important}
 }
+
+
+/* Smooth automatic hero slider with mirrored image reflection */
+.hero-banner-image{animation:obaidBannerReveal .8s cubic-bezier(.2,.7,.2,1) both;will-change:opacity,transform}
+@keyframes obaidBannerReveal{from{opacity:0;transform:scale(1.035)}to{opacity:.55;transform:scale(1)}}
+.hero-reflection{display:block;width:100%;height:92px;object-fit:cover;object-position:center 72%;transform:scaleY(-1);opacity:.28;filter:saturate(.82) blur(.4px);pointer-events:none;margin:0 0 -48px;border-radius:0 0 20px 20px;-webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,.48),transparent 96%);mask-image:linear-gradient(to bottom,rgba(0,0,0,.48),transparent 96%)}
+@media(max-width:640px){.hero-reflection{height:58px;margin-bottom:-30px;opacity:.22}}
+@media(prefers-reduced-motion:reduce){.hero-banner-image{animation:none}}
