@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 import { ProfileDashboard } from "@/components/profile-dashboard";
-import { ShoppingBag, UserRound, Mail, LockKeyhole, Phone, MapPin, CalendarDays, ArrowRight, ShieldCheck, LoaderCircle, Eye, EyeOff, KeyRound } from "lucide-react";
+import { ShoppingBag, UserRound, Mail, LockKeyhole, Phone, MapPin, CalendarDays, ArrowRight, ShieldCheck, LoaderCircle, Eye, EyeOff } from "lucide-react";
 
 const governorates = ["دمشق","ريف دمشق","حلب","حمص","حماة","اللاذقية","طرطوس","إدلب","درعا","السويداء","القنيطرة","دير الزور","الرقة","الحسكة"];
 
