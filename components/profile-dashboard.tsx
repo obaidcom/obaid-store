@@ -90,7 +90,7 @@ export function ProfileDashboard() {
   const saveProfile=async(e:FormEvent)=>{e.preventDefault();if(!profile)return;setSaving(true);setNotice("");setError("");const s=getSupabase();if(!s||!user){setSaving(false);return;}
     const fullName=[profile.first_name,profile.last_name].filter(Boolean).join(" ").trim() || profile.full_name;
     const {error:e1}=await s.from("profiles").update({first_name:profile.first_name,last_name:profile.last_name,full_name:fullName,birth_date:profile.birth_date||null,phone:profile.phone,governorate:profile.governorate,default_address:profile.default_address}).eq("id",user.id);
-    if(e1)setError("لم يتم حفظ البيانات: "+e1.message);else{setNotice("تم حفظ بياناتك بنجاح.");setProfile({...profile});}
+    if(e1)setError("لم يتم حفظ البيانات: "+e1.message);else{setNotice("تم حفظ بياناتك بنجاح.");setProfile({...profile,full_name:fullName});}
     setSaving(false);
   };
 
