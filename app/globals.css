@@ -243,3 +243,15 @@ img{display:block;max-width:100%}
 .store-shell[data-theme="light"] footer .text-slate-300{color:#52627c}
 .store-shell[data-theme="light"] nav[aria-label="التنقل السريع"]{background:rgba(248,250,255,.97);color:#3b4b65}
 .store-shell[data-theme="light"] nav[aria-label="التنقل السريع"] a{color:#3b4b65}
+
+
+/* Cinematic hero slider: smooth image entrance with a soft mirrored reflection */
+.store-shell .hero-slide-image{animation:obaidHeroCrossfade .8s cubic-bezier(.2,.7,.2,1) both;transform-origin:center;will-change:opacity,transform}
+@keyframes obaidHeroCrossfade{0%{opacity:0;transform:scale(1.045)}100%{opacity:1;transform:scale(1)}}
+.store-shell .hero-reflection{position:relative;height:66px;margin-top:0;overflow:hidden;pointer-events:none;opacity:.52;transform:perspective(180px) rotateX(0deg);mask-image:linear-gradient(to bottom,rgba(0,0,0,.55),transparent 92%);-webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,.55),transparent 92%)}
+.store-shell .hero-reflection-image{display:block;width:100%;height:100%;object-fit:cover;object-position:center top;transform:scaleY(-1);filter:blur(1.5px) saturate(.82)}
+.store-shell .hero-reflection:after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgba(8,18,37,.12),rgba(8,18,37,.72));}
+.store-shell[data-theme="light"] .hero-reflection{opacity:.36}
+.store-shell[data-theme="light"] .hero-reflection:after{background:linear-gradient(to bottom,rgba(237,244,255,.12),rgba(237,244,255,.86))}
+@media(max-width:767px){.store-shell .hero-reflection{height:42px}}
+@media(prefers-reduced-motion:reduce){.store-shell .hero-slide-image{animation:none}}
