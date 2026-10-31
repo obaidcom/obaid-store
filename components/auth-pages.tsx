@@ -1,119 +1,92 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent, type ChangeEvent } from "react";
-import { ArrowRight, Camera, CheckCircle2, CircleUserRound, LockKeyhole, Mail, UserRound } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, UserRound, Phone, ShieldCheck, LoaderCircle } from "lucide-react";
+import { getSupabase } from "@/lib/supabase";
 
-type AuthPageProps = { mode: "login" | "signup" };
+type Props = { mode: "login" | "signup" };
 
-export function AuthPage({ mode }: AuthPageProps) {
-  const [activeMode, setActiveMode] = useState<"login" | "signup">("login");
-  const [created, setCreated] = useState(false);
-  const [notice, setNotice] = useState("");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [avatar, setAvatar] = useState("");
+export function AuthPage({ mode }: Props) {
+  const router = useRouter();
+  const [email,setEmail] = useState("");
+  const [password,setPassword] = useState("");
+  const [name,setName] = useState("");
+  const [phone,setPhone] = useState("");
+  const [showPassword,setShowPassword] = useState(false);
+  const [loading,setLoading] = useState(false);
+  const [notice,setNotice] = useState("");
+  const [error,setError] = useState("");
+  const isSignup = mode === "signup";
 
-  const saveAvatar = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setNotice("اختر ملف صورة صالحاً.");
-      return;
-    }
-    if (file.size > 1500000) {
-      setNotice("حجم الصورة كبير؛ اختر صورة أقل من 1.5 ميغابايت.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result !== "string") return;
-      try {
-        localStorage.setItem("obaid-store-avatar", reader.result);
-        setAvatar(reader.result);
-        setNotice("تم حفظ الصورة الشخصية على هذا الجهاز.");
-      } catch {
-        setNotice("تعذر حفظ الصورة؛ جرّب صورة أصغر.");
-      }
-    };
-    reader.readAsDataURL(file);
-    event.target.value = "";
-  };
+  useEffect(() => {
+    let alive = true;
+    const client = getSupabase();
+    if (!client) return;
+    client.auth.getSession().then(({data}) => {
+      if (alive && data.session) router.replace("/profile");
+    });
+    return () => { alive = false; };
+  },[router]);
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setNotice("");
-    if (activeMode === "signup") {
-      try {
-        localStorage.setItem("obaid-store-profile", JSON.stringify({
-          name, email, phone, governorate: "دمشق", address: ""
-        }));
-        localStorage.setItem("obaid-store-demo-account", JSON.stringify({ email, password }));
-        setCreated(true);
-        setNotice("تم إنشاء ملف حساب تجريبي محلياً. أضف صورتك الشخصية أدناه.");
-      } catch {
-        setNotice("تعذر حفظ البيانات على هذا الجهاز.");
-      }
-      return;
-    }
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); setError(""); setNotice(""); setLoading(true);
+    const supabase = getSupabase();
+    if (!supabase) { setError("إعدادات الاتصال بقاعدة بيانات المتجر غير مكتملة."); setLoading(false); return; }
     try {
-      const account = localStorage.getItem("obaid-store-demo-account");
-      const saved = account ? JSON.parse(account) as { email: string; password: string } : null;
-      if (saved && saved.email === email && saved.password === password) {
-        setNotice("تم تسجيل الدخول إلى الحساب التجريبي على هذا الجهاز.");
+      if (isSignup) {
+        const {data,error:authError} = await supabase.auth.signUp({
+          email: email.trim().toLowerCase(), password,
+          options: { data: { full_name: name.trim(), phone: phone.trim() }, emailRedirectTo: `${window.location.origin}/profile` }
+        });
+        if (authError) throw authError;
+        if (data.user && data.session) {
+          await supabase.from("profiles").upsert({id:data.user.id,full_name:name.trim(),phone:phone.trim()},{onConflict:"id"});
+          router.replace("/profile"); router.refresh(); return;
+        }
+        setNotice("تم إنشاء الحساب. تحقق من بريدك الإلكتروني واضغط رابط التأكيد، ثم سجّل الدخول.");
       } else {
-        setNotice("لم نعثر على حساب تجريبي مطابق على هذا الجهاز. أنشئ حساباً أولاً.");
+        const {error:authError} = await supabase.auth.signInWithPassword({email:email.trim().toLowerCase(),password});
+        if (authError) throw authError;
+        router.replace("/profile"); router.refresh(); return;
       }
-    } catch {
-      setNotice("تعذر قراءة بيانات الحساب على هذا الجهاز.");
-    }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "تعذر إتمام العملية.";
+      setError(message.includes("Invalid login") ? "البريد الإلكتروني أو كلمة المرور غير صحيحة." :
+        message.includes("already registered") ? "هذا البريد مسجل بالفعل. سجّل الدخول." :
+        message.includes("Password should") ? "كلمة المرور يجب أن تكون 8 أحرف على الأقل." : message);
+    } finally { setLoading(false); }
   };
 
   return (
-    <main dir="rtl" className="min-h-screen bg-[#101a2d] px-4 py-8 text-[#e7edf8] sm:py-14">
-      <div className="mx-auto max-w-md">
-        <Link href="/" className="mb-7 inline-flex items-center gap-2 text-sm font-bold text-blue-300 hover:text-white">
-          <ArrowRight size={18} /> العودة إلى عبيد ستور
-        </Link>
-        <section className="overflow-hidden rounded-[28px] border border-[#2b3e5d] bg-[#17253d] shadow-2xl shadow-black/20">
-          <div className="bg-gradient-to-l from-blue-800 via-blue-700 to-sky-600 px-6 py-7 text-center text-white">
-            <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-white/20 bg-white/10">
-              {activeMode === "signup" ? <UserRound size={28} /> : <LockKeyhole size={27} />}
-            </span>
-            <h1 className="mt-4 text-2xl font-black">{activeMode === "signup" ? (created ? "أضف صورتك الشخصية" : "إنشاء حساب جديد") : "تسجيل الدخول"}</h1>
-            <p className="mt-2 text-sm leading-6 text-blue-100">{activeMode === "signup" ? (created ? "خطوة اختيارية لتخصيص ملفك الشخصي" : "أنشئ ملفك للعودة إلى بياناتك بسهولة") : "أدخل بيانات الحساب التجريبي المحفوظ على هذا الجهاز"}</p>
+    <main dir="rtl" className="min-h-screen bg-[#eef3fb] px-4 py-8 text-slate-800 sm:py-12">
+      <div className="mx-auto grid min-h-[620px] max-w-5xl overflow-hidden rounded-[30px] bg-white shadow-[0_25px_80px_rgba(16,42,86,.14)] lg:grid-cols-[.9fr_1.1fr]">
+        <aside className="relative hidden overflow-hidden bg-[#101d36] p-10 text-white lg:flex lg:flex-col lg:justify-between">
+          <div className="absolute -left-24 -top-20 h-72 w-72 rounded-full border-[38px] border-blue-400/10"/>
+          <div className="absolute -bottom-28 -right-20 h-80 w-80 rounded-full border-[45px] border-sky-400/10"/>
+          <div className="relative"><div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-blue-600 text-2xl font-black">ع</div><div className="text-2xl font-black">متجر عبيد</div><div className="mt-1 text-xs tracking-[.25em] text-blue-300">OBEID STORE</div></div>
+          <div className="relative"><ShieldCheck size={38} className="mb-5 text-blue-300"/><h2 className="text-3xl font-black leading-relaxed">تسوّقك أسهل، وحسابك في مكان واحد</h2><p className="mt-4 max-w-sm text-sm leading-8 text-slate-300">تابع طلباتك، احفظ عناوينك المفضلة، واحتفظ بتفاصيل مشترياتك بأمان.</p></div>
+          <div className="relative text-xs text-slate-400">تجربة تسوّق عربية من متجر عبيد</div>
+        </aside>
+        <section className="flex flex-col justify-center px-5 py-8 sm:px-10 lg:px-14">
+          <Link href="/" className="mb-9 inline-flex w-fit items-center gap-2 text-sm font-bold text-blue-700 hover:text-blue-900"><ArrowRight size={17}/> العودة إلى المتجر</Link>
+          <div className="mb-7">
+            <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-blue-50 text-blue-700"><UserRound size={25}/></div>
+            <h1 className="text-3xl font-black text-[#14233e]">{isSignup ? "إنشاء حساب جديد" : "مرحباً بعودتك"}</h1>
+            <p className="mt-2 text-sm leading-7 text-slate-500">{isSignup ? "أنشئ حسابك لتستمتع بتجربة تسوّق متكاملة." : "سجّل الدخول للوصول إلى ملفك الشخصي وطلباتك."}</p>
           </div>
-          <div className="p-5 sm:p-7">
-            {activeMode === "signup" && created ? (
-              <div className="grid gap-5 text-center">
-                <div className="mx-auto grid h-28 w-28 place-items-center overflow-hidden rounded-full border-4 border-blue-400/30 bg-blue-500/10 text-blue-300">
-                  {avatar ? <img src={avatar} alt="صورتك الشخصية" className="h-full w-full object-cover" /> : <CircleUserRound size={64} />}
-                </div>
-                <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-blue-400/30 bg-blue-500/10 px-4 py-3 font-bold text-blue-200 transition hover:bg-blue-500/20">
-                  <Camera size={18} /> {avatar ? "تغيير الصورة الشخصية" : "اختيار صورة من الهاتف"}
-                  <input type="file" accept="image/*" className="hidden" onChange={saveAvatar} />
-                </label>
-                <p className="text-xs leading-6 text-slate-400">الصورة اختيارية، والحد الأقصى 1.5 ميغابايت. تحفظ محلياً على هذا الجهاز في النسخة التجريبية.</p>
-                {notice && <p role="status" className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-3 text-sm leading-6 text-emerald-200">{notice}</p>}
-                <Link href="/" className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 font-extrabold text-white hover:bg-blue-500"><CheckCircle2 size={18} /> متابعة إلى المتجر</Link>
-                <button type="button" onClick={() => { setActiveMode("login"); setCreated(false); setNotice(""); }} className="text-sm font-bold text-blue-300 hover:text-white">الانتقال إلى تسجيل الدخول</button>
-              </div>
-            ) : (
-              <form className="grid gap-4" onSubmit={submit}>
-                {activeMode === "signup" && <label className="grid gap-2 text-sm font-bold">الاسم الكامل<input required autoComplete="name" value={name} onChange={e => setName(e.target.value)} placeholder="اكتب اسمك الكامل" className="rounded-xl border border-[#344b70] bg-[#101a2d] px-4 py-3 outline-none focus:border-blue-500" /></label>}
-                <label className="grid gap-2 text-sm font-bold"><span className="flex items-center gap-2"><Mail size={16} className="text-blue-400" /> البريد الإلكتروني</span><input required type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@example.com" className="rounded-xl border border-[#344b70] bg-[#101a2d] px-4 py-3 outline-none focus:border-blue-500" /></label>
-                {activeMode === "signup" && <label className="grid gap-2 text-sm font-bold">رقم الهاتف (اختياري)<input type="tel" autoComplete="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="رقم الهاتف" className="rounded-xl border border-[#344b70] bg-[#101a2d] px-4 py-3 outline-none focus:border-blue-500" /></label>}
-                <label className="grid gap-2 text-sm font-bold"><span className="flex items-center gap-2"><LockKeyhole size={16} className="text-blue-400" /> كلمة المرور</span><input required minLength={8} type="password" autoComplete={activeMode === "signup" ? "new-password" : "current-password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="8 أحرف على الأقل" className="rounded-xl border border-[#344b70] bg-[#101a2d] px-4 py-3 outline-none focus:border-blue-500" /></label>
-                {activeMode === "signup" && <label className="flex items-start gap-2 text-xs leading-6 text-slate-400"><input required type="checkbox" className="mt-1 accent-blue-500" /> أوافق على شروط الاستخدام وسياسة الخصوصية التجريبية.</label>}
-                <button type="submit" className="mt-1 flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 font-extrabold text-white shadow-lg shadow-blue-950/30 hover:bg-blue-500">{activeMode === "signup" ? "إنشاء الحساب والمتابعة" : "تسجيل الدخول"} <ArrowRight size={17} /></button>
-                {notice && <p role="status" className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-sm leading-6 text-amber-200">{notice}</p>}
-              </form>
-            )}
-            {!created && <div className="mt-6 border-t border-[#344b70] pt-5 text-center text-sm text-slate-400">{activeMode === "signup" ? "لديك حساب بالفعل؟ " : "ليس لديك حساب؟ "}<button type="button" className="font-extrabold text-blue-300 hover:text-white" onClick={() => { setActiveMode(activeMode === "signup" ? "login" : "signup"); setNotice(""); }}>{activeMode === "signup" ? "تسجيل الدخول" : "إنشاء حساب جديد"}</button></div>}
-            <p className="mt-5 text-center text-[11px] leading-6 text-slate-500">نسخة تجريبية: لا يوجد خادم مصادقة متصل. لا تستخدم كلمة مرورك الحقيقية؛ البيانات محفوظة محلياً على هذا الجهاز فقط.</p>
-          </div>
+          <form onSubmit={submit} className="grid gap-4">
+            {isSignup && <label className="grid gap-2 text-sm font-bold">الاسم الكامل<div className="relative"><UserRound className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18}/><input required value={name} onChange={e=>setName(e.target.value)} autoComplete="name" placeholder="اكتب اسمك الكامل" className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pe-12 ps-4 outline-none transition focus:border-blue-500 focus:bg-white"/></div></label>}
+            <label className="grid gap-2 text-sm font-bold">البريد الإلكتروني<div className="relative"><Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18}/><input required type="email" value={email} onChange={e=>setEmail(e.target.value)} autoComplete="email" placeholder="name@example.com" className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pe-12 ps-4 outline-none transition focus:border-blue-500 focus:bg-white"/></div></label>
+            {isSignup && <label className="grid gap-2 text-sm font-bold">رقم الهاتف (اختياري)<div className="relative"><Phone className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18}/><input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} autoComplete="tel" placeholder="رقم الهاتف" className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pe-12 ps-4 outline-none transition focus:border-blue-500 focus:bg-white"/></div></label>}
+            <label className="grid gap-2 text-sm font-bold">كلمة المرور<div className="relative"><LockKeyhole className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18}/><input required minLength={8} type={showPassword?"text":"password"} value={password} onChange={e=>setPassword(e.target.value)} autoComplete={isSignup?"new-password":"current-password"} placeholder="8 أحرف على الأقل" className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pe-12 ps-12 outline-none transition focus:border-blue-500 focus:bg-white"/><button type="button" onClick={()=>setShowPassword(v=>!v)} aria-label="إظهار كلمة المرور" className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">{showPassword?<EyeOff size={18}/>:<Eye size={18}/>}</button></div></label>
+            <button disabled={loading} className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-blue-700 py-4 font-extrabold text-white shadow-lg shadow-blue-900/15 transition hover:bg-blue-800 disabled:opacity-60">{loading?<LoaderCircle className="animate-spin" size={18}/>:null}{isSignup?"إنشاء الحساب":"تسجيل الدخول"} <ArrowRight size={17}/></button>
+          </form>
+          {error && <p role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm leading-6 text-rose-700">{error}</p>}
+          {notice && <p role="status" className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-700">{notice}</p>}
+          <div className="mt-7 border-t border-slate-100 pt-6 text-center text-sm text-slate-500">{isSignup?"لديك حساب بالفعل؟":"ليس لديك حساب؟"} <Link className="font-extrabold text-blue-700 hover:text-blue-900" href={isSignup?"/login":"/signup"}>{isSignup?"تسجيل الدخول":"إنشاء حساب جديد"}</Link></div>
+          <p className="mt-6 text-center text-xs leading-6 text-slate-400">بيانات حسابك تُدار بأمان عبر خدمة المصادقة في Supabase.</p>
         </section>
       </div>
     </main>
