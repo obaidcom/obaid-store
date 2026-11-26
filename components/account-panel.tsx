@@ -23,6 +23,9 @@ export function AccountPanel() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [orders, setOrders] = useState<Array<{order_number:string;status:string;total_syp:number;created_at:string}>>([]);
+  const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
     if (!supabase) return;
@@ -35,6 +38,40 @@ export function AccountPanel() {
     });
     return () => { mounted = false; listener.subscription.unsubscribe(); };
   }, [supabase]);
+
+  useEffect(() => {
+    if (!supabase || !user) return;
+    let active = true;
+    setProfileLoading(true);
+    Promise.all([
+      supabase.from("profiles").select("full_name,phone,governorate").eq("id", user.id).maybeSingle(),
+      supabase.from("orders").select("order_number,status,total_syp,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10)
+    ]).then(([profileResult, ordersResult]) => {
+      if (!active) return;
+      if (profileResult.data) {
+        setName(profileResult.data.full_name || user.user_metadata?.full_name || "");
+        setPhone(profileResult.data.phone || user.user_metadata?.phone || "");
+        setGovernorate(profileResult.data.governorate || user.user_metadata?.governorate || "");
+      }
+      if (!ordersResult.error && ordersResult.data) setOrders(ordersResult.data);
+    }).finally(() => { if (active) setProfileLoading(false); });
+    return () => { active = false; };
+  }, [supabase, user]);
+
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!supabase || !user) return;
+    setSavingProfile(true); setError(""); setMessage("");
+    const { error: profileError } = await supabase.from("profiles").update({
+      full_name: name.trim(), phone: phone.trim(), governorate
+    }).eq("id", user.id);
+    if (profileError) setError("تعذر حفظ البيانات. تحقق من تنفيذ مخطط قاعدة البيانات وصلاحيات RLS.");
+    else {
+      await supabase.auth.updateUser({ data: { full_name: name.trim(), phone: phone.trim(), governorate } });
+      setMessage("تم تحديث بيانات ملفك الشخصي.");
+    }
+    setSavingProfile(false);
+  }
 
   async function sendCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(""); setMessage("");
@@ -76,17 +113,29 @@ export function AccountPanel() {
 
   if (!supabase) return <div className="m-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-7 text-amber-900"><b className="block">إعداد الربط مطلوب</b>أضف <code>NEXT_PUBLIC_SUPABASE_URL</code> و<code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> إلى إعدادات المشروع، ثم أعد تشغيل التطبيق لتفعيل الحسابات.</div>;
 
-  if (user && step === "profile") return <section className="space-y-4 p-5">
+  if (user && step === "profile") return <section className="space-y-4 overflow-y-auto p-5">
     <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5">
       <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-blue-600 text-white"><UserRound /></div>
-      <b className="block text-base">{user.user_metadata?.full_name || "مرحباً بك في متجر عبيد"}</b>
+      <b className="block text-base">{name || "مرحباً بك في متجر عبيد"}</b>
       <span className="mt-1 block text-xs text-slate-600">{user.email}</span>
       <span className="mt-2 inline-flex items-center gap-1 text-[11px] text-emerald-700"><ShieldCheck size={14}/> حساب موثّق بالبريد الإلكتروني</span>
     </div>
-    <div className="rounded-xl border border-blue-100 p-4 text-xs leading-6 text-slate-600">تم تفعيل جلسة حسابك. ستظهر الطلبات والعناوين والمفضلة بعد استكمال ربط وحدات المتجر بقاعدة البيانات.</div>
-    <button onClick={signOut} className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-100 py-3 text-sm font-bold text-slate-700 hover:bg-blue-50"><LogOut size={16}/> تسجيل الخروج</button>
+    <form onSubmit={saveProfile} className="space-y-3 rounded-2xl border border-blue-100 p-4">
+      <b className="block text-sm">بيانات ملفي الشخصي</b>
+      <label className="block text-xs text-slate-700">الاسم الكامل<input value={name} onChange={e=>setName(e.target.value)} required className="mt-2 w-full rounded-xl border border-blue-100 bg-white p-3"/></label>
+      <label className="block text-xs text-slate-700">رقم الهاتف<input value={phone} onChange={e=>setPhone(e.target.value)} required type="tel" className="mt-2 w-full rounded-xl border border-blue-100 bg-white p-3"/></label>
+      <label className="block text-xs text-slate-700">المحافظة<select value={governorate} onChange={e=>setGovernorate(e.target.value)} className="mt-2 w-full rounded-xl border border-blue-100 bg-white p-3"><option value="">اختر المحافظة</option>{governorates.map(g=><option key={g} value={g}>{g}</option>)}</select></label>
+      <button disabled={savingProfile || profileLoading} className="w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white disabled:opacity-60">{savingProfile?"جارٍ الحفظ...":"حفظ التعديلات"}</button>
+    </form>
+    <div className="rounded-2xl border border-blue-100 p-4">
+      <div className="mb-3 flex items-center justify-between"><b className="text-sm">طلباتي</b><span className="text-[10px] text-slate-500">آخر 10 طلبات</span></div>
+      {profileLoading ? <p className="text-xs text-slate-500">جارٍ تحميل الطلبات...</p> : orders.length ? <div className="space-y-2">{orders.map(order=><div key={order.order_number} className="rounded-xl bg-blue-50 p-3"><div className="flex items-center justify-between gap-2"><b className="text-xs">{order.order_number}</b><span className="text-[10px] text-blue-700">{new Intl.NumberFormat("ar-SY").format(order.total_syp)} ل.س</span></div><div className="mt-2 flex items-center justify-between text-[10px] text-slate-600"><span>{order.status}</span><span>{new Date(order.created_at).toLocaleDateString("ar-SY")}</span></div></div>)}</div> : <p className="text-xs leading-6 text-slate-600">لا توجد طلبات مرتبطة بحسابك حتى الآن.</p>}
+    </div>
+    {message&&<p role="status" className="rounded-xl bg-emerald-50 p-3 text-xs text-emerald-800">{message}</p>}
+    {error&&<p role="alert" className="rounded-xl bg-rose-50 p-3 text-xs text-rose-700">{error}</p>}
     <a href="/support" className="block rounded-xl border border-blue-100 p-4 text-sm">الدعم وخدمة العملاء</a>
     <a href="/privacy" className="block rounded-xl border border-blue-100 p-4 text-sm">سياسة الخصوصية</a>
+    <button onClick={signOut} className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-100 py-3 text-sm font-bold text-slate-700 hover:bg-blue-50"><LogOut size={16}/> تسجيل الخروج</button>
   </section>;
 
   return <section className="space-y-4 p-5">
