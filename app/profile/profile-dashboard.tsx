@@ -12,12 +12,12 @@ import { getSupabase, hasSupabaseConfig } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
 type Tab = "overview" | "personal" | "orders" | "addresses" | "wishlist" | "invoices" | "security" | "support";
-type Profile = { full_name: string; phone: string; governorate: string; default_address: string; avatar_url: string; theme: string };
+type Profile = { full_name: string; phone: string; governorate: string; default_address: string; avatar_url: string; theme: string; birth_date: string; customer_code: string };
 type Order = { order_number: string | null; tracking_code: string | null; status: string; payment_method: string | null; payment_status: string | null; total: number; created_at: string };
 type Address = { id: string; label: string; governorate: string; city: string; details: string; phone: string };
 
 const regions = ["دمشق","ريف دمشق","حلب","حمص","حماة","اللاذقية","طرطوس","إدلب","دير الزور","الحسكة","الرقة","درعا","السويداء","القنيطرة"];
-const emptyProfile: Profile = { full_name: "", phone: "", governorate: "دمشق", default_address: "", avatar_url: "", theme: "blue" };
+const emptyProfile: Profile = { full_name: "", phone: "", governorate: "دمشق", default_address: "", avatar_url: "", theme: "blue", birth_date: "", customer_code: "" };
 const nav: { id: Tab; label: string; detail: string; icon: typeof UserRound }[] = [
   { id: "overview", label: "نظرة عامة", detail: "ملخص حسابك", icon: UserRound },
   { id: "personal", label: "المعلومات الشخصية", detail: "بياناتك وطرق التواصل", icon: Settings },
@@ -40,7 +40,7 @@ export default function ProfileDashboard() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [favorites, setFavorites] = useState<number[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [newAddress, setNewAddress] = useState({ label: "المنزل", governorate: "دمشق", city: "", details: "", phone: "" });
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -50,16 +50,31 @@ export default function ProfileDashboard() {
     const supabase = getSupabase();
     let alive = true;
     const load = async (u: User) => {
-      const [{ data: row, error: profileError }, { data: orderRows, error: orderError }] = await Promise.all([
-        supabase.from("profiles").select("full_name,phone,governorate,default_address,avatar_url,theme").eq("id", u.id).maybeSingle(),
+      const [
+        { data: row, error: profileError },
+        { data: orderRows, error: orderError },
+        { data: addressRows, error: addressError },
+        { data: favoriteRows, error: favoriteError },
+      ] = await Promise.all([
+        supabase.from("profiles").select("full_name,phone,governorate,default_address,avatar_url,theme,birth_date,customer_code").eq("id", u.id).maybeSingle(),
         supabase.from("orders").select("order_number,tracking_code,status,payment_method,payment_status,total,created_at").eq("user_id", u.id).order("created_at", { ascending: false }).limit(30),
+        supabase.from("addresses").select("id,label,governorate,district,address_line,details,phone,recipient_name,is_default").eq("user_id", u.id).order("created_at", { ascending: false }),
+        supabase.from("favorites").select("product_id").eq("user_id", u.id),
       ]);
       if (profileError) throw profileError;
       if (orderError) throw orderError;
+      if (addressError) throw addressError;
+      if (favoriteError) throw favoriteError;
       if (!alive) return;
       setUser(u);
       setProfile({ ...emptyProfile, ...(row || {}), full_name: row?.full_name || String(u.user_metadata?.full_name || "") });
       setOrders((orderRows || []) as Order[]);
+      setAddresses((addressRows || []).map((a: any) => ({
+        id: String(a.id), label: String(a.label || "المنزل"), governorate: String(a.governorate || ""),
+        city: String(a.district || ""), details: [a.address_line, a.details].filter(Boolean).join("، "),
+        phone: String(a.phone || ""),
+      })));
+      setFavorites((favoriteRows || []).map((f: any) => String(f.product_id)));
     };
     supabase.auth.getSession().then(async ({ data, error: sessionError }) => {
       if (!alive) return;
@@ -77,18 +92,9 @@ export default function ProfileDashboard() {
     return () => { alive = false; listener.subscription.unsubscribe(); };
   }, [configured]);
 
-  useEffect(() => {
-    try {
-      const savedAddresses = localStorage.getItem("obaid-store-addresses");
-      const savedFavorites = localStorage.getItem("obaid-store-favorites");
-      if (savedAddresses) setAddresses(JSON.parse(savedAddresses));
-      if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
-    } catch { /* ignore invalid local cache */ }
-  }, []);
-
   const current = nav.find(item => item.id === active)!;
   const initials = (profile.full_name || user?.email || "ع").trim().slice(0, 1).toUpperCase();
-  const invoiceCount = useMemo(() => 0, []);
+  const invoiceCount = useMemo(() => orders.length, [orders]);
 
   const saveProfile = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -98,6 +104,7 @@ export default function ProfileDashboard() {
       const { error: saveError } = await getSupabase().from("profiles").upsert({
         id: user.id, full_name: profile.full_name.trim(), phone: profile.phone.trim(),
         governorate: profile.governorate, default_address: profile.default_address.trim(), theme: profile.theme,
+        birth_date: profile.birth_date || null,
       }, { onConflict: "id" });
       if (saveError) throw saveError;
       setNotice("تم حفظ بيانات الملف الشخصي في قاعدة البيانات.");
@@ -125,20 +132,36 @@ export default function ProfileDashboard() {
     finally { setBusy(false); }
   };
 
-  const addAddress = (e: FormEvent<HTMLFormElement>) => {
+  const addAddress = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const item: Address = { ...newAddress, id: String(Date.now()) };
-    const next = [item, ...addresses];
-    setAddresses(next);
-    try { localStorage.setItem("obaid-store-addresses", JSON.stringify(next)); } catch { setError("تعذر حفظ العنوان على هذا الجهاز."); return; }
-    setNewAddress({ label: "المنزل", governorate: profile.governorate || "دمشق", city: "", details: "", phone: profile.phone || "" });
-    setNotice("تم حفظ العنوان على هذا الجهاز.");
+    if (!user) return;
+    setBusy(true); setError(""); setNotice("");
+    try {
+      const { data, error: addressError } = await getSupabase().from("addresses").insert({
+        user_id: user.id, label: newAddress.label, recipient_name: profile.full_name || String(user.user_metadata?.full_name || "عميل"),
+        phone: newAddress.phone || profile.phone, governorate: newAddress.governorate,
+        district: newAddress.city.trim(), address_line: newAddress.details.trim(), details: "",
+        is_default: addresses.length === 0,
+      }).select("id,label,governorate,district,address_line,details,phone").single();
+      if (addressError) throw addressError;
+      const item: Address = { id: String(data.id), label: String(data.label), governorate: String(data.governorate), city: String(data.district || ""), details: [data.address_line, data.details].filter(Boolean).join("، "), phone: String(data.phone || "") };
+      setAddresses(current => [item, ...current]);
+      setNewAddress({ label: "المنزل", governorate: profile.governorate || "دمشق", city: "", details: "", phone: profile.phone || "" });
+      setNotice("تم حفظ العنوان في حسابك ويمكنك الوصول إليه من أجهزتك الأخرى.");
+    } catch (e) { setError(e instanceof Error ? e.message : "تعذر حفظ العنوان"); }
+    finally { setBusy(false); }
   };
 
-  const removeAddress = (id: string) => {
-    const next = addresses.filter(a => a.id !== id);
-    setAddresses(next);
-    try { localStorage.setItem("obaid-store-addresses", JSON.stringify(next)); } catch { setError("تعذر تحديث دفتر العناوين."); }
+  const removeAddress = async (id: string) => {
+    if (!user) return;
+    setBusy(true); setError(""); setNotice("");
+    try {
+      const { error: deleteError } = await getSupabase().from("addresses").delete().eq("id", id).eq("user_id", user.id);
+      if (deleteError) throw deleteError;
+      setAddresses(current => current.filter(a => a.id !== id));
+      setNotice("تم حذف العنوان من حسابك.");
+    } catch (e) { setError(e instanceof Error ? e.message : "تعذر حذف العنوان"); }
+    finally { setBusy(false); }
   };
 
   const changePassword = async (e: FormEvent<HTMLFormElement>) => {
@@ -193,7 +216,7 @@ export default function ProfileDashboard() {
                 <div className="grid h-20 w-20 place-items-center overflow-hidden rounded-[25px] border-2 border-white/40 bg-white/15 text-3xl font-black sm:h-24 sm:w-24">{profile.avatar_url ? <img src={profile.avatar_url} alt="الصورة الشخصية" className="h-full w-full object-cover"/> : initials}</div>
                 <label className="absolute -bottom-2 -left-2 grid h-8 w-8 cursor-pointer place-items-center rounded-xl border-2 border-[#17458d] bg-white text-blue-700 shadow" title="تغيير الصورة"><Camera size={15}/><input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={uploadAvatar} disabled={busy}/></label>
               </div>
-              <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="truncate text-xl font-black sm:text-2xl">{profile.full_name || "مرحباً بك"}</h2><span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/30 bg-emerald-300/15 px-2.5 py-1 text-[10px] font-bold text-emerald-100"><CheckCircle2 size={12}/> حساب مسجل</span></div><p className="mt-1 max-w-[260px] truncate text-sm text-blue-100 sm:max-w-none">{user.email}</p><button onClick={() => setActive("personal")} className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-white/90"><Pencil size={13}/> تعديل الملف الشخصي</button></div>
+              <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="truncate text-xl font-black sm:text-2xl">{profile.full_name || "مرحباً بك"}</h2><span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/30 bg-emerald-300/15 px-2.5 py-1 text-[10px] font-bold text-emerald-100"><CheckCircle2 size={12}/> حساب مسجل</span></div><p className="mt-1 max-w-[260px] truncate text-sm text-blue-100 sm:max-w-none">{user.email}</p>{profile.customer_code && <p className="mt-1 text-[10px] font-bold text-blue-200">رقم العميل: <span dir="ltr">{profile.customer_code}</span></p>}<button onClick={() => setActive("personal")} className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-white/90"><Pencil size={13}/> تعديل الملف الشخصي</button></div>
             </div>
             <button onClick={signOut} className="inline-flex items-center gap-2 self-start rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-bold text-white hover:bg-white/15 sm:self-auto"><LogOut size={15}/> تسجيل الخروج</button>
           </div>
@@ -213,15 +236,15 @@ export default function ProfileDashboard() {
 
             {active === "overview" && <><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{[{icon:Package,label:"إجمالي الطلبات",value:String(orders.length)},{icon:Clock3,label:"قيد المتابعة",value:String(orders.filter(o => !["delivered","cancelled"].includes(o.status)).length)},{icon:Heart,label:"المفضلة",value:String(favorites.length)},{icon:WalletCards,label:"الفواتير",value:String(invoiceCount)}].map(card => { const Icon = card.icon; return <div key={card.label} className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4"><span className="grid h-9 w-9 place-items-center rounded-xl bg-white text-blue-600 shadow-sm"><Icon size={17}/></span><p className="mt-3 text-xs font-bold text-slate-500">{card.label}</p><b className="mt-1 block text-2xl font-black text-[#10213e]">{card.value}</b></div>; })}</div><div className="mt-6 grid gap-3 sm:grid-cols-2"><button onClick={() => setActive("orders")} className="flex items-center justify-between rounded-2xl border border-blue-100 bg-blue-50/60 p-4 text-right"><span className="flex items-center gap-3"><Truck className="text-blue-700"/><span><b className="block text-sm">تتبع طلباتك</b><small className="mt-1 block text-xs text-slate-500">تابع حالة الطلب حتى التسليم</small></span></span><ChevronLeft className="text-blue-600"/></button><button onClick={() => setActive("addresses")} className="flex items-center justify-between rounded-2xl border border-slate-100 p-4 text-right"><span className="flex items-center gap-3"><MapPin className="text-blue-700"/><span><b className="block text-sm">عناوين التوصيل</b><small className="mt-1 block text-xs text-slate-500">إدارة عناوينك المحفوظة</small></span></span><ChevronLeft className="text-slate-400"/></button></div><div className="mt-6 rounded-2xl border border-slate-100 p-4"><b className="text-sm">أحدث الطلبات</b>{orders.slice(0,3).length ? orders.slice(0,3).map(o => <div key={o.tracking_code || o.order_number} className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs"><span><b className="block">{o.order_number || o.tracking_code || "طلب"}</b><small className="mt-1 block text-slate-400">{new Date(o.created_at).toLocaleDateString("ar-SY")}</small></span><span className="rounded-full bg-blue-50 px-3 py-1 font-bold text-blue-700">{o.status}</span></div>) : <p className="mt-3 text-xs text-slate-500">لا توجد طلبات مسجلة في هذا الحساب بعد.</p>}</div></>}
 
-            {active === "personal" && <form onSubmit={saveProfile} className="grid max-w-2xl gap-4 sm:grid-cols-2"><label className="grid gap-2 text-xs font-bold sm:col-span-2">الاسم الكامل<input required value={profile.full_name} onChange={e => setProfile(p => ({ ...p, full_name: e.target.value }))} className="h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-blue-500"/></label><label className="grid gap-2 text-xs font-bold">البريد الإلكتروني<input value={user.email || ""} readOnly className="h-12 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-500"/></label><label className="grid gap-2 text-xs font-bold">رقم الهاتف<input required value={profile.phone} onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))} dir="ltr" className="h-12 rounded-xl border border-slate-200 px-4 text-left text-sm outline-none focus:border-blue-500"/></label><label className="grid gap-2 text-xs font-bold">المحافظة<select value={profile.governorate} onChange={e => setProfile(p => ({ ...p, governorate: e.target.value }))} className="h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm">{regions.map(r => <option key={r}>{r}</option>)}</select></label><label className="grid gap-2 text-xs font-bold sm:col-span-2">عنوان التوصيل الافتراضي<input value={profile.default_address} onChange={e => setProfile(p => ({ ...p, default_address: e.target.value }))} className="h-12 rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-500"/></label><button disabled={busy} className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-black text-white disabled:opacity-50 sm:col-span-2"><Save size={16}/> {busy ? "جار الحفظ..." : "حفظ البيانات"}</button></form>}
+            {active === "personal" && <form onSubmit={saveProfile} className="grid max-w-2xl gap-4 sm:grid-cols-2"><label className="grid gap-2 text-xs font-bold sm:col-span-2">الاسم الكامل<input required value={profile.full_name} onChange={e => setProfile(p => ({ ...p, full_name: e.target.value }))} className="h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-blue-500"/></label><label className="grid gap-2 text-xs font-bold">البريد الإلكتروني<input value={user.email || ""} readOnly className="h-12 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-500"/></label><label className="grid gap-2 text-xs font-bold">رقم الهاتف<input required value={profile.phone} onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))} dir="ltr" className="h-12 rounded-xl border border-slate-200 px-4 text-left text-sm outline-none focus:border-blue-500"/></label><label className="grid gap-2 text-xs font-bold">تاريخ الميلاد<input type="date" value={profile.birth_date} onChange={e => setProfile(p => ({ ...p, birth_date: e.target.value }))} className="h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-blue-500"/></label><label className="grid gap-2 text-xs font-bold">المحافظة<select value={profile.governorate} onChange={e => setProfile(p => ({ ...p, governorate: e.target.value }))} className="h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm">{regions.map(r => <option key={r}>{r}</option>)}</select></label><label className="grid gap-2 text-xs font-bold sm:col-span-2">عنوان التوصيل الافتراضي<input value={profile.default_address} onChange={e => setProfile(p => ({ ...p, default_address: e.target.value }))} className="h-12 rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-500"/></label><button disabled={busy} className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-black text-white disabled:opacity-50 sm:col-span-2"><Save size={16}/> {busy ? "جار الحفظ..." : "حفظ البيانات"}</button></form>}
 
             {active === "orders" && <div className="space-y-3">{orders.length ? orders.map(o => <article key={o.tracking_code || o.order_number} className="rounded-2xl border border-slate-100 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[10px] font-bold text-slate-400">رقم الطلب</p><b className="mt-1 block text-sm text-slate-900">{o.order_number || o.tracking_code || "—"}</b><small className="mt-1 block text-xs text-slate-400">{new Date(o.created_at).toLocaleString("ar-SY")}</small></div><span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700">{o.status}</span></div><div className="mt-3 grid gap-2 border-t border-slate-100 pt-3 text-xs sm:grid-cols-3"><span>الإجمالي: <b>{new Intl.NumberFormat("ar-SY").format(Number(o.total) || 0)} ل.س</b></span><span>الدفع: <b>{o.payment_method || "غير محدد"}</b></span><span>حالة الدفع: <b>{o.payment_status || "غير محددة"}</b></span></div>{o.tracking_code && <p className="mt-3 rounded-xl bg-slate-50 p-3 text-xs text-slate-600">رمز التتبع: <b dir="ltr">{o.tracking_code}</b></p>}</article>) : <div className="rounded-2xl border border-dashed border-blue-200 bg-blue-50/40 p-10 text-center"><Package size={30} className="mx-auto text-blue-600"/><b className="mt-3 block">لا توجد طلبات حتى الآن</b><p className="mt-2 text-xs text-slate-500">ستظهر مشترياتك هنا عند تسجيل الطلبات باستخدام هذا الحساب.</p><Link href="/#products" className="mt-4 inline-flex rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white">ابدأ التسوق</Link></div>}</div>}
 
-            {active === "addresses" && <div className="space-y-4"><form onSubmit={addAddress} className="grid gap-3 rounded-2xl border border-blue-100 bg-blue-50/40 p-4 sm:grid-cols-2"><label className="grid gap-1 text-xs font-bold">نوع العنوان<select value={newAddress.label} onChange={e => setNewAddress(a => ({ ...a, label: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-3"><option>المنزل</option><option>العمل</option><option>عنوان آخر</option></select></label><label className="grid gap-1 text-xs font-bold">المحافظة<select value={newAddress.governorate} onChange={e => setNewAddress(a => ({ ...a, governorate: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-3">{regions.map(r => <option key={r}>{r}</option>)}</select></label><label className="grid gap-1 text-xs font-bold">المدينة / المنطقة<input required value={newAddress.city} onChange={e => setNewAddress(a => ({ ...a, city: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-3"/></label><label className="grid gap-1 text-xs font-bold">رقم الهاتف<input value={newAddress.phone} onChange={e => setNewAddress(a => ({ ...a, phone: e.target.value }))} dir="ltr" className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-left"/></label><label className="grid gap-1 text-xs font-bold sm:col-span-2">العنوان بالتفصيل<input required value={newAddress.details} onChange={e => setNewAddress(a => ({ ...a, details: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-3"/></label><button className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-xs font-black text-white sm:col-span-2"><Plus size={15}/> إضافة العنوان</button></form><div className="grid gap-3 sm:grid-cols-2">{addresses.map(a => <article key={a.id} className="rounded-2xl border border-slate-100 p-4"><div className="flex items-center justify-between"><span className="flex items-center gap-2 font-black text-slate-800">{a.label === "العمل" ? <Briefcase size={17}/> : <Home size={17}/>} {a.label}</span><button onClick={() => removeAddress(a.id)} className="rounded-lg p-2 text-rose-500 hover:bg-rose-50" aria-label="حذف العنوان"><Trash2 size={16}/></button></div><p className="mt-2 text-xs leading-6 text-slate-600">{a.governorate} - {a.city}<br/>{a.details}</p>{a.phone && <p className="mt-2 text-xs text-slate-500" dir="ltr">{a.phone}</p>}</article>)}</div>{!addresses.length && <p className="text-center text-xs text-slate-500">أضف عنوان المنزل أو العمل أو عنواناً آخر لتسهيل التوصيل. دفتر العناوين الإضافي محفوظ محلياً على هذا الجهاز.</p>}</div>}
+            {active === "addresses" && <div className="space-y-4"><form onSubmit={addAddress} className="grid gap-3 rounded-2xl border border-blue-100 bg-blue-50/40 p-4 sm:grid-cols-2"><label className="grid gap-1 text-xs font-bold">نوع العنوان<select value={newAddress.label} onChange={e => setNewAddress(a => ({ ...a, label: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-3"><option>المنزل</option><option>العمل</option><option>عنوان آخر</option></select></label><label className="grid gap-1 text-xs font-bold">المحافظة<select value={newAddress.governorate} onChange={e => setNewAddress(a => ({ ...a, governorate: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-3">{regions.map(r => <option key={r}>{r}</option>)}</select></label><label className="grid gap-1 text-xs font-bold">المدينة / المنطقة<input required value={newAddress.city} onChange={e => setNewAddress(a => ({ ...a, city: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-3"/></label><label className="grid gap-1 text-xs font-bold">رقم الهاتف<input value={newAddress.phone} onChange={e => setNewAddress(a => ({ ...a, phone: e.target.value }))} dir="ltr" className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-left"/></label><label className="grid gap-1 text-xs font-bold sm:col-span-2">العنوان بالتفصيل<input required value={newAddress.details} onChange={e => setNewAddress(a => ({ ...a, details: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-3"/></label><button className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-xs font-black text-white sm:col-span-2"><Plus size={15}/> إضافة العنوان</button></form><div className="grid gap-3 sm:grid-cols-2">{addresses.map(a => <article key={a.id} className="rounded-2xl border border-slate-100 p-4"><div className="flex items-center justify-between"><span className="flex items-center gap-2 font-black text-slate-800">{a.label === "العمل" ? <Briefcase size={17}/> : <Home size={17}/>} {a.label}</span><button onClick={() => removeAddress(a.id)} className="rounded-lg p-2 text-rose-500 hover:bg-rose-50" aria-label="حذف العنوان"><Trash2 size={16}/></button></div><p className="mt-2 text-xs leading-6 text-slate-600">{a.governorate} - {a.city}<br/>{a.details}</p>{a.phone && <p className="mt-2 text-xs text-slate-500" dir="ltr">{a.phone}</p>}</article>)}</div>{!addresses.length && <p className="text-center text-xs text-slate-500">أضف عنوان المنزل أو العمل أو عنواناً آخر لتسهيل التوصيل. دفتر العناوين مرتبط بحسابك ويُزامن عبر أجهزتك.</p>}</div>}
 
-            {active === "wishlist" && <div className="rounded-2xl border border-slate-100 p-6 text-center"><Heart size={30} className="mx-auto text-rose-500"/><b className="mt-3 block">قائمة أمنياتك</b><p className="mt-2 text-sm text-slate-500">لديك {favorites.length} منتجاً محفوظاً على هذا الجهاز.</p><Link href="/#products" className="mt-4 inline-flex rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white">عرض المنتجات في المتجر</Link><p className="mt-3 text-[11px] text-slate-400">قائمة المفضلة الحالية مرتبطة بمتصفح هذا الجهاز وليست متزامنة بعد بين الأجهزة.</p></div>}
+            {active === "wishlist" && <div className="rounded-2xl border border-slate-100 p-6 text-center"><Heart size={30} className="mx-auto text-rose-500"/><b className="mt-3 block">قائمة أمنياتك</b><p className="mt-2 text-sm text-slate-500">لديك {favorites.length} منتجاً محفوظاً في حسابك.</p><Link href="/#products" className="mt-4 inline-flex rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white">عرض المنتجات في المتجر</Link><p className="mt-3 text-[11px] text-slate-400">قائمة المفضلة تُقرأ من حسابك وتُزامن عبر أجهزتك.</p></div>}
 
-            {active === "invoices" && <div className="rounded-2xl border border-dashed border-blue-200 bg-blue-50/40 p-10 text-center"><FileText size={30} className="mx-auto text-blue-600"/><b className="mt-3 block">الفواتير</b><p className="mt-2 text-xs leading-6 text-slate-500">لا توجد فواتير إلكترونية متاحة للعرض حالياً. ستظهر الفاتورة هنا بعد تفعيل إصدار الفواتير وربطها بالطلبات.</p></div>}
+            {active === "invoices" && <div className="space-y-3"><div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-4"><b className="text-sm">سجل المشتريات والفواتير</b><p className="mt-1 text-xs leading-6 text-slate-500">يعرض هذا القسم ملخصات الطلبات المسجلة. إصدار ملفات PDF رسمية يحتاج تفعيل قالب الفاتورة لاحقاً.</p></div>{orders.length ? orders.map(o => <article key={o.tracking_code || o.order_number} className="rounded-2xl border border-slate-100 p-4"><div className="flex flex-wrap items-center justify-between gap-2"><div><b className="text-sm">{o.order_number || o.tracking_code || "طلب"}</b><p className="mt-1 text-[11px] text-slate-400">{new Date(o.created_at).toLocaleDateString("ar-SY")}</p></div><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">{o.status}</span></div><div className="mt-3 border-t border-slate-100 pt-3 text-sm"><span className="text-slate-500">الإجمالي</span><b className="mr-2 text-[#10213e]">{new Intl.NumberFormat("ar-SY").format(Number(o.total) || 0)} ل.س</b></div></article>) : <div className="rounded-2xl border border-dashed border-blue-200 p-8 text-center text-xs text-slate-500">لا توجد مشتريات مسجلة في هذا الحساب بعد.</div>}</div>}
 
             {active === "security" && <div className="max-w-xl space-y-4"><div className="flex items-center gap-3 rounded-2xl bg-blue-50 p-4 text-blue-800"><LockKeyhole size={21}/><p className="text-xs leading-6">استخدم كلمة مرور قوية ولا تشارك رمز التحقق مع أي شخص.</p></div><form onSubmit={changePassword} className="grid gap-3"><label className="grid gap-1 text-xs font-bold">كلمة المرور الجديدة<input required minLength={8} type="password" value={password} onChange={e => setPassword(e.target.value)} className="h-12 rounded-xl border border-slate-200 px-4 text-sm"/></label><label className="grid gap-1 text-xs font-bold">تأكيد كلمة المرور<input required type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="h-12 rounded-xl border border-slate-200 px-4 text-sm"/></label><button disabled={busy} className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white disabled:opacity-50"><KeyRound size={16}/> تحديث كلمة المرور</button></form><p className="rounded-xl bg-slate-50 p-4 text-xs leading-6 text-slate-500">تغيير البريد الإلكتروني وإعدادات التحقق الإضافية تتم من مزود تسجيل الدخول. لا نعرض كلمة المرور الحالية أو رموز الأمان.</p></div>}
 
