@@ -1,128 +1,99 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabase, hasSupabaseConfig } from "@/lib/supabase/client";
-import { ShieldCheck, LayoutDashboard, Package, ShoppingCart, Users, LogOut, Store, LoaderCircle } from "lucide-react";
+import { ShieldCheck, LayoutDashboard, Package, ShoppingCart, Users, LogOut, Store, LoaderCircle, Tags, TicketPercent, Settings, Star, Headphones, RefreshCw, Search, Save, Plus, Pencil, Eye, EyeOff, Truck, X } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 
-type AccessState = "checking" | "allowed" | "denied" | "error";
-
-export default function AdminPage() {
-  const router = useRouter();
-  const [state, setState] = useState<AccessState>("checking");
-  const [user, setUser] = useState<User | null>(null);
-  const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    if (!hasSupabaseConfig()) {
-      setState("error");
-      setMessage("إعدادات الاتصال بقاعدة البيانات غير مكتملة.");
-      return;
-    }
-
-    let active = true;
-    const supabase = getSupabase();
-
-    const verify = async () => {
-      const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
-      if (authError || !currentUser) {
-        if (!active) return;
-        setState("denied");
-        setMessage("سجّل الدخول بحساب المدير للمتابعة.");
-        return;
-      }
-
-      const { data: admin, error: adminError } = await supabase
-        .from("admin_users")
-        .select("role")
-        .eq("user_id", currentUser.id)
-        .maybeSingle();
-
-      if (!active) return;
-      if (adminError) {
-        setState("error");
-        setMessage("تعذر التحقق من صلاحيات الإدارة. حاول لاحقاً.");
-        return;
-      }
-      if (!admin || admin.role !== "admin") {
-        setState("denied");
-        setMessage("هذا الحساب لا يملك صلاحية الدخول إلى لوحة الإدارة.");
-        return;
-      }
-
-      setUser(currentUser);
-      setState("allowed");
-    };
-
-    void verify();
-    return () => { active = false; };
-  }, []);
-
-  const signOut = async () => {
-    await getSupabase().auth.signOut();
-    router.replace("/login");
+type Tab = "overview" | "orders" | "products" | "categories" | "coupons" | "customers" | "reviews" | "support" | "settings";
+type Row = Record<string, any>;
+const tabs: {id:Tab;label:string;icon:any}[] = [
+  {id:"overview",label:"الرئيسية",icon:LayoutDashboard},{id:"orders",label:"الطلبات",icon:ShoppingCart},
+  {id:"products",label:"المنتجات والمخزون",icon:Package},{id:"categories",label:"التصنيفات",icon:Tags},
+  {id:"coupons",label:"الكوبونات والعروض",icon:TicketPercent},{id:"customers",label:"العملاء",icon:Users},
+  {id:"reviews",label:"التقييمات",icon:Star},{id:"support",label:"الدعم والشكاوى",icon:Headphones},
+  {id:"settings",label:"إعدادات المتجر",icon:Settings},
+];
+const orderStates = ["pending","confirmed","processing","shipped","delivered","cancelled"];
+const stateNames:Record<string,string> = {pending:"قيد الانتظار",confirmed:"تم التأكيد",processing:"قيد التجهيز",shipped:"تم الشحن",delivered:"تم التسليم",cancelled:"ملغي"};
+const money=(n:any)=>new Intl.NumberFormat("ar-SY").format(Number(n)||0)+" ل.س";
+const input="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-blue-500";
+const btn="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-500 disabled:opacity-50";
+const panel="rounded-2xl border border-white/10 bg-slate-900 p-4";
+export default function AdminPage(){
+ const router=useRouter(); const [state,setState]=useState<"checking"|"allowed"|"denied"|"error">("checking");
+ const [user,setUser]=useState<User|null>(null); const [tab,setTab]=useState<Tab>("overview");
+ const [data,setData]=useState<Record<string,Row[]>>({}); const [loading,setLoading]=useState(false);
+ const [notice,setNotice]=useState(""); const [error,setError]=useState(""); const [search,setSearch]=useState("");
+ const [editing,setEditing]=useState<Row|null>(null); const [form,setForm]=useState<Row>({});
+ const supabase=getSupabase();
+ useEffect(()=>{let active=true;(async()=>{if(!hasSupabaseConfig()){setState("error");setError("إعدادات قاعدة البيانات غير مكتملة");return}
+ const {data:{user:u}}=await supabase.auth.getUser();if(!active)return;if(!u){setState("denied");return}
+ const {data:a,error:e}=await supabase.from("admin_users").select("role").eq("user_id",u.id).maybeSingle();
+ if(!active)return;if(e){setState("error");setError("تعذر التحقق من صلاحيات المدير");return}
+ if(a?.role!=="admin"){setState("denied");return}setUser(u);setState("allowed");
+ })();return()=>{active=false}},[]);
+ const load=useCallback(async()=>{
+  setLoading(true);setError("");const queries:Record<Tab,()=>Promise<any>>={
+   overview:()=>Promise.all([supabase.from("orders").select("id,status,total,created_at"),supabase.from("products").select("id,is_active,stock_quantity")]),
+   orders:()=>supabase.from("orders").select("id,order_number,user_id,customer_name,customer_email,customer_phone,governorate,district,shipping_address,notes,status,payment_method,payment_status,subtotal,shipping_cost,discount_amount,total,tracking_code,created_at").order("created_at",{ascending:false}).limit(300),
+   products:()=>supabase.from("products").select("id,name,slug,description,sku,price,compare_at_price,stock_quantity,image_url,category_id,is_active,is_featured,created_at").order("created_at",{ascending:false}),
+   categories:()=>supabase.from("categories").select("*").order("sort_order"),
+   coupons:()=>supabase.from("coupons").select("*").order("created_at",{ascending:false}),
+   customers:()=>supabase.from("profiles").select("id,full_name,phone,governorate,customer_code,created_at").order("created_at",{ascending:false}).limit(300),
+   reviews:()=>supabase.from("reviews").select("*").order("created_at",{ascending:false}).limit(300),
+   support:()=>supabase.from("support_tickets").select("*").order("created_at",{ascending:false}).limit(300),
+   settings:()=>supabase.from("store_settings").select("*").order("key"),
   };
-
-  if (state === "checking") {
-    return <main dir="rtl" className="min-h-screen grid place-items-center bg-slate-950 text-white"><div className="flex items-center gap-3"><LoaderCircle className="animate-spin" /> جارٍ التحقق من صلاحيات المدير...</div></main>;
-  }
-
-  if (state !== "allowed") {
-    return (
-      <main dir="rtl" className="min-h-screen grid place-items-center bg-slate-950 px-4 text-white">
-        <section className="w-full max-w-md rounded-3xl border border-white/10 bg-slate-900 p-8 text-center shadow-2xl">
-          <ShieldCheck className="mx-auto mb-4 h-14 w-14 text-amber-400" />
-          <h1 className="mb-3 text-2xl font-bold">بوابة إدارة عبيد ستور</h1>
-          <p className="mb-6 text-sm leading-7 text-slate-300">{message}</p>
-          <div className="flex flex-col gap-3">
-            <Link href="/login" className="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500">تسجيل الدخول</Link>
-            <Link href="/" className="rounded-xl border border-white/15 px-5 py-3 text-slate-200 hover:bg-white/5">العودة إلى المتجر</Link>
-          </div>
-        </section>
-      </main>
-    );
-  }
-
-  const sections = [
-    { title: "المنتجات", detail: "إدارة المنتجات والأسعار والمخزون", icon: Package },
-    { title: "الطلبات", detail: "متابعة الطلبات وحالات الشحن", icon: ShoppingCart },
-    { title: "العملاء", detail: "عرض حسابات العملاء", icon: Users },
-  ];
-
-  return (
-    <main dir="rtl" className="min-h-screen bg-slate-950 text-white">
-      <header className="border-b border-white/10 bg-slate-900/80">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-blue-600 p-2"><ShieldCheck className="h-6 w-6" /></div>
-            <div><p className="font-bold">عبيد ستور</p><p className="text-xs text-slate-400">لوحة الإدارة المستقلة</p></div>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="hidden text-sm text-slate-300 sm:block">{user?.email}</span>
-            <button onClick={signOut} className="flex items-center gap-2 rounded-xl border border-white/15 px-3 py-2 text-sm hover:bg-white/5"><LogOut className="h-4 w-4" /> خروج</button>
-            <Link href="/" aria-label="المتجر" className="rounded-xl border border-white/15 p-2 hover:bg-white/5"><Store className="h-5 w-5" /></Link>
-          </div>
-        </div>
-      </header>
-      <div className="mx-auto max-w-7xl px-4 py-10">
-        <div className="mb-8 flex items-center gap-3">
-          <LayoutDashboard className="h-8 w-8 text-blue-400" />
-          <div><h1 className="text-3xl font-bold">لوحة التحكم</h1><p className="mt-1 text-sm text-slate-400">مرحباً بك. تم التحقق من صلاحية حساب المدير.</p></div>
-        </div>
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {sections.map(({ title, detail, icon: Icon }) => (
-            <article key={title} className="rounded-2xl border border-white/10 bg-slate-900 p-6">
-              <div className="mb-4 inline-flex rounded-xl bg-blue-500/15 p-3 text-blue-300"><Icon className="h-6 w-6" /></div>
-              <h2 className="mb-2 text-lg font-bold">{title}</h2>
-              <p className="text-sm leading-6 text-slate-400">{detail}</p>
-              <p className="mt-4 text-xs text-slate-500">قسم الإدارة — سيتم ربط أدواته ضمن التحديثات التالية</p>
-            </article>
-          ))}
-        </section>
-        <p className="mt-8 text-xs text-slate-500">هذه الصفحة مستقلة عن واجهة المتجر. لا يتم عرضها إلا بعد التحقق من جلسة المستخدم وصلاحية admin من قاعدة البيانات.</p>
-      </div>
-    </main>
-  );
+  const result=await queries[tab]();
+  if(tab==="overview"){const [o,p]=result;if(o.error||p.error)setError((o.error||p.error).message);else setData(d=>({...d,overview:[{orders:o.data||[],products:p.data||[]}]}));}
+  else if(result.error)setError(result.error.message);else setData(d=>({...d,[tab]:result.data||[]}));
+  setLoading(false);
+ },[tab]);
+ useEffect(()=>{if(state==="allowed")void load()},[state,load]);
+ const save=async(e:FormEvent)=>{e.preventDefault();setError("");setNotice("");let table=tab==="products"?"products":tab==="categories"?"categories":tab==="coupons"?"coupons":tab==="settings"?"store_settings":null;if(!table)return;
+ const payload={...form};if(table==="products"){payload.price=Number(payload.price);payload.compare_at_price=payload.compare_at_price===""?null:Number(payload.compare_at_price);payload.stock_quantity=Number(payload.stock_quantity);payload.is_active=!!payload.is_active;payload.is_featured=!!payload.is_featured}
+ if(table==="categories"){payload.sort_order=Number(payload.sort_order||0);payload.is_active=!!payload.is_active}
+ if(table==="coupons"){payload.discount_percent=Number(payload.discount_percent||0);payload.discount_amount=Number(payload.discount_amount||0);payload.minimum_order=Number(payload.minimum_order||0);payload.usage_limit=payload.usage_limit===""?null:Number(payload.usage_limit);payload.is_active=!!payload.is_active}
+ if(table==="store_settings"){payload.value=typeof payload.value==="string"?JSON.parse(payload.value):payload.value}
+ const q=editing?.id|| (table==="store_settings"&&editing?.key)?supabase.from(table).update(payload).eq(table==="store_settings"?"key":"id",table==="store_settings"?editing.key:editing.id):supabase.from(table).insert(payload);
+ const {error:e}=await q;if(e){setError(e.message);return}setNotice("تم حفظ التغييرات.");setEditing(null);setForm({});await load();
+ };
+ const changeOrder=async(o:Row,patch:Row)=>{setError("");const {error:e}=await supabase.from("orders").update(patch).eq("id",o.id);if(e){setError(e.message);return}setNotice("تم تحديث الطلب.");await load()};
+ const toggle=async(table:string,row:Row,field:string)=>{const {error:e}=await supabase.from(table).update({[field]:!row[field]}).eq("id",row.id);if(e)setError(e.message);else{setNotice("تم تحديث الحالة.");await load()}};
+ const remove=async(table:string,row:Row)=>{if(!window.confirm("هل أنت متأكد من حذف هذا العنصر؟"))return;const {error:e}=await supabase.from(table).delete().eq("id",row.id);if(e)setError(e.message);else{setNotice("تم الحذف.");await load()}};
+ const signOut=async()=>{await supabase.auth.signOut();router.replace("/login")};
+ if(state==="checking")return <main dir="rtl" className="grid min-h-screen place-items-center bg-slate-950 text-white"><LoaderCircle className="animate-spin"/> جارٍ التحقق من صلاحيات المدير</main>;
+ if(state!=="allowed")return <main dir="rtl" className="grid min-h-screen place-items-center bg-slate-950 px-4 text-white"><section className={panel+" max-w-md text-center"}><ShieldCheck className="mx-auto mb-4 h-12 w-12 text-amber-400"/><h1 className="text-2xl font-black">بوابة إدارة عبيد ستور</h1><p className="my-4 text-sm text-slate-300">{error||"يجب تسجيل الدخول بحساب المدير المصرح له."}</p><Link className={btn} href="/login">تسجيل الدخول</Link><Link className="mr-3 text-sm text-slate-300" href="/">العودة للمتجر</Link></section></main>;
+ const rows=data[tab]||[];const filtered=rows.filter(r=>JSON.stringify(r).toLowerCase().includes(search.toLowerCase()));
+ const startEdit=(r?:Row)=>{setEditing(r||{});setForm(r?{...r,value:tab==="settings"?JSON.stringify(r.value,null,2):r.value}:{is_active:true,is_featured:false,stock_quantity:0,price:0,discount_percent:0,discount_amount:0,sort_order:0})};
+ const field=(key:string,label:string,type="text")=><label key={key} className="grid gap-1 text-xs text-slate-300">{label}<input className={input} type={type} value={form[key]??""} onChange={e=>setForm((f:Row)=>({...f,[key]:e.target.value}))}/></label>;
+ const check=(key:string,label:string)=><label key={key} className="flex items-center gap-2 text-sm text-slate-200"><input type="checkbox" checked={!!form[key]} onChange={e=>setForm((f:Row)=>({...f,[key]:e.target.checked}))}/>{label}</label>;
+ return <main dir="rtl" className="min-h-screen bg-slate-950 text-white">
+ <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-900/95 backdrop-blur"><div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-3"><div className="flex items-center gap-3"><span className="rounded-xl bg-blue-600 p-2"><ShieldCheck/></span><div><b>عبيد ستور</b><p className="text-[11px] text-slate-400">مركز إدارة الموقع</p></div></div><div className="flex items-center gap-2 text-xs"><span className="hidden text-slate-300 sm:block">{user?.email}</span><Link href="/" className="rounded-lg border border-white/15 p-2" title="المتجر"><Store size={17}/></Link><button onClick={signOut} className="rounded-lg border border-white/15 p-2" title="خروج"><LogOut size={17}/></button></div></div></header>
+ <div className="mx-auto grid max-w-[1600px] gap-5 px-3 py-5 sm:px-5 lg:grid-cols-[245px_minmax(0,1fr)]">
+ <aside className={panel+" h-fit"}><h2 className="mb-3 px-2 font-black">أقسام الإدارة</h2><nav className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">{tabs.map(t=>{const I=t.icon;return <button key={t.id} onClick={()=>{setTab(t.id);setSearch("");setEditing(null);setNotice("");setError("")}} className={"flex items-center gap-2 rounded-xl px-3 py-3 text-right text-xs font-bold "+(tab===t.id?"bg-blue-600 text-white":"text-slate-300 hover:bg-slate-800")}><I size={17}/>{t.label}</button>})}</nav><p className="mt-4 border-t border-white/10 pt-3 text-[10px] leading-5 text-slate-500">لوحة مستقلة محمية بصلاحية المدير من قاعدة البيانات.</p></aside>
+ <section className="min-w-0"><div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold text-blue-400">OBAID STORE / ADMIN</p><h1 className="mt-1 text-2xl font-black">{tabs.find(t=>t.id===tab)?.label}</h1></div><div className="flex gap-2"><button onClick={()=>void load()} className="rounded-xl border border-white/15 p-2.5" title="تحديث"><RefreshCw size={17}/></button>{["products","categories","coupons"].includes(tab)&&<button onClick={()=>startEdit()} className={btn}><Plus size={16}/> إضافة جديد</button>}</div></div>
+ {notice&&<p role="status" className="mb-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-300">{notice}</p>}{error&&<p role="alert" className="mb-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-300">{error}</p>}
+ {tab!=="overview"&&<div className="mb-3 flex items-center gap-2 rounded-xl border border-white/10 bg-slate-900 px-3"><Search size={16} className="text-slate-400"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث في هذا القسم..." className="w-full bg-transparent py-3 text-sm outline-none"/></div>}
+ {loading?<div className={panel+" py-12 text-center text-slate-300"}><LoaderCircle className="mx-auto animate-spin"/> جارٍ تحميل البيانات...</div>:null}
+ {tab==="overview"&&<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{(()=>{const v=data.overview?.[0]||{orders:[],products:[]};return [{label:"كل الطلبات",value:v.orders.length,icon:ShoppingCart},{label:"طلبات قيد الانتظار",value:v.orders.filter((o:Row)=>o.status==="pending").length,icon:Truck},{label:"المنتجات",value:v.products.length,icon:Package},{label:"منتجات منخفضة المخزون",value:v.products.filter((p:Row)=>Number(p.stock_quantity)<=5).length,icon:Tags}].map(c=>{const I=c.icon;return <div key={c.label} className={panel}><I className="mb-3 text-blue-400"/><p className="text-xs text-slate-400">{c.label}</p><b className="mt-1 block text-3xl">{c.value}</b></div>})})()}</div>}
+ {tab==="orders"&&<div className="space-y-3">{filtered.map(o=><article key={o.id} className={panel}><div className="flex flex-wrap justify-between gap-3"><div><b>طلب {o.order_number||o.id.slice(0,8)}</b><p className="mt-1 text-xs text-slate-400">{o.customer_name||"عميل"} · {o.customer_phone||""} · {o.customer_email||""}</p><p className="mt-1 text-xs text-slate-400">{o.governorate||""} {o.district||""} — {o.shipping_address||""}</p></div><b className="text-emerald-300">{money(o.total)}</b></div><div className="mt-3 grid gap-2 border-t border-white/10 pt-3 sm:grid-cols-2"><label className="grid gap-1 text-xs text-slate-400">حالة الطلب<select className={input} value={o.status||"pending"} onChange={e=>void changeOrder(o,{status:e.target.value})}>{orderStates.map(s=><option key={s} value={s}>{stateNames[s]}</option>)}</select></label><label className="grid gap-1 text-xs text-slate-400">حالة الدفع<select className={input} value={o.payment_status||"pending"} onChange={e=>void changeOrder(o,{payment_status:e.target.value})}>{["pending","paid","failed","refunded"].map(s=><option key={s}>{s}</option>)}</select></label><label className="grid gap-1 text-xs text-slate-400">رقم التتبع<input className={input} defaultValue={o.tracking_code||""} onBlur={e=>{if(e.target.value!==(o.tracking_code||""))void changeOrder(o,{tracking_code:e.target.value})}} placeholder="أدخل رقم التتبع"/></label><div className="text-xs text-slate-400">الدفع: {o.payment_method||"—"} · {new Date(o.created_at).toLocaleString("ar-SY")}</div></div><details className="mt-2 text-xs text-slate-400"><summary className="cursor-pointer">ملاحظات الطلب والتفاصيل</summary><p className="mt-2 whitespace-pre-wrap">{o.notes||"لا توجد ملاحظات"}</p><p>المعرف: {o.id}</p></details></article>)}{!filtered.length&&<p className={panel+" text-center text-sm text-slate-400"}>لا توجد طلبات.</p>}</div>}
+ {["products","categories","coupons"].includes(tab)&&<div className="space-y-2">{filtered.map(r=><article key={r.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-900 p-3"><div className="flex min-w-0 items-center gap-3">{tab==="products"&&r.image_url?<img src={r.image_url} className="h-14 w-14 rounded-lg object-cover" alt=""/>:null}<div className="min-w-0"><b className="block truncate text-sm">{r.name||r.code||r.key}</b><p className="mt-1 text-xs text-slate-400">{tab==="products"?money(r.price)+" · المخزون "+r.stock_quantity:tab==="coupons"?"خصم "+(r.discount_percent||r.discount_amount):r.slug}</p></div></div><div className="flex items-center gap-2 text-xs"><span className={r.is_active?"text-emerald-300":"text-slate-500"}>{r.is_active?"مفعّل":"مخفي"}</span><button onClick={()=>startEdit(r)} className="rounded-lg border border-white/15 p-2"><Pencil size={15}/></button><button onClick={()=>void toggle(tab,r,"is_active")} className="rounded-lg border border-white/15 p-2">{r.is_active?<EyeOff size={15}/>:<Eye size={15}/>}</button><button onClick={()=>void remove(tab,r)} className="rounded-lg border border-rose-500/30 p-2 text-rose-300"><X size={15}/></button></div></article>)}{!filtered.length&&<p className={panel+" text-center text-sm text-slate-400"}>لا توجد عناصر في هذا القسم.</p>}</div>}
+ {tab==="customers"&&<div className="space-y-2">{filtered.map(c=><article key={c.id} className={panel+" flex flex-wrap justify-between gap-2"}><div><b>{c.full_name||"عميل"}</b><p className="mt-1 text-xs text-slate-400">{c.phone||"بدون هاتف"} · {c.governorate||""}</p></div><span className="text-xs text-slate-400">{c.customer_code||c.id}</span></article>)}</div>}
+ {tab==="reviews"&&<div className="space-y-2">{filtered.map(r=><article key={r.id} className={panel}><div className="flex items-center justify-between"><b>{r.title||"تقييم منتج"} · {"★".repeat(Number(r.rating)||0)}</b><button onClick={()=>void toggle("reviews",r,"is_published")} className="rounded-lg border border-white/15 px-3 py-2 text-xs">{r.is_published?"إخفاء":"نشر"}</button></div><p className="mt-2 text-sm text-slate-300">{r.body||""}</p></article>)}</div>}
+ {tab==="support"&&<div className="space-y-2">{filtered.map(r=><article key={r.id} className={panel}><div className="flex flex-wrap justify-between gap-2"><b>{r.subject||r.category}</b><select className="rounded-lg bg-slate-950 p-2 text-xs" value={r.status||"open"} onChange={e=>void supabase.from("support_tickets").update({status:e.target.value}).eq("id",r.id).then(({error:e})=>{if(e)setError(e.message);else{setNotice("تم تحديث التذكرة");void load()}})}><option value="open">مفتوحة</option><option value="in_progress">قيد المعالجة</option><option value="closed">مغلقة</option></select></div><p className="mt-2 text-sm text-slate-300">{r.message}</p><p className="mt-2 text-xs text-slate-500">العميل: {r.user_id} · {new Date(r.created_at).toLocaleString("ar-SY")}</p></article>)}</div>}
+ {tab==="settings"&&<div className="space-y-2">{filtered.map(r=><article key={r.key} className={panel}><div className="flex flex-wrap items-center justify-between gap-2"><b>{r.key}</b><button onClick={()=>startEdit(r)} className="rounded-lg border border-white/15 px-3 py-2 text-xs"><Pencil size={14} className="inline"/> تعديل القيمة</button></div><pre className="mt-2 overflow-auto whitespace-pre-wrap text-xs text-slate-400">{JSON.stringify(r.value,null,2)}</pre></article>)}</div>}
+ {tab==="settings"&&<p className="mt-3 text-xs text-slate-500">إعدادات المتجر المتاحة في قاعدة البيانات فقط. أي مفاتيح جديدة تحتاج ربطاً في واجهة المتجر قبل أن يظهر تأثيرها.</p>}
+ </section></div>
+ {editing!==null&&<div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/70 p-3"><form onSubmit={save} className="my-6 w-full max-w-2xl space-y-4 rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-2xl"><div className="flex items-center justify-between"><h2 className="text-lg font-black">{editing.id||editing.key?"تعديل العنصر":"إضافة عنصر جديد"}</h2><button type="button" onClick={()=>setEditing(null)}><X/></button></div>
+ {tab==="products"&&<div className="grid gap-3 sm:grid-cols-2">{field("name","اسم المنتج")}{field("slug","الرابط المختصر")}{field("sku","رمز SKU")}{field("price","السعر","number")}{field("compare_at_price","السعر قبل الخصم","number")}{field("stock_quantity","كمية المخزون","number")}{field("image_url","رابط الصورة")}{field("category_id","معرّف التصنيف (اختياري)") }<label className="grid gap-1 text-xs text-slate-300 sm:col-span-2">الوصف<textarea className={input} value={form.description||""} onChange={e=>setForm((f:Row)=>({...f,description:e.target.value}))}/></label>{check("is_active","عرض المنتج في المتجر")}{check("is_featured","منتج مميز")}</div>}
+ {tab==="categories"&&<div className="grid gap-3 sm:grid-cols-2">{field("name","اسم التصنيف")}{field("slug","الرابط المختصر")}{field("image_url","رابط الصورة")}{field("sort_order","ترتيب العرض","number")}<label className="grid gap-1 text-xs text-slate-300 sm:col-span-2">الوصف<textarea className={input} value={form.description||""} onChange={e=>setForm((f:Row)=>({...f,description:e.target.value}))}/></label>{check("is_active","تصنيف مفعّل")}</div>}
+ {tab==="coupons"&&<div className="grid gap-3 sm:grid-cols-2">{field("code","رمز الكوبون")}{field("discount_percent","نسبة الخصم %","number")}{field("discount_amount","قيمة الخصم","number")}{field("minimum_order","الحد الأدنى للطلب","number")}{field("usage_limit","حد الاستخدام","number")}{field("expires_at","تاريخ الانتهاء","datetime-local")}{check("is_active","كوبون فعّال")}</div>}
+ {tab==="settings"&&<div className="grid gap-2"><p className="text-xs text-slate-400">القيمة بصيغة JSON صحيحة</p><textarea rows={9} className={input} value={typeof form.value==="string"?form.value:JSON.stringify(form.value,null,2)} onChange={e=>setForm((f:Row)=>({...f,value:e.target.value}))}/></div>}
+ <div className="flex justify-end gap-2"><button type="button" onClick={()=>setEditing(null)} className="rounded-xl border border-white/15 px-4 py-2 text-sm">إلغاء</button><button className={btn}><Save size={16}/> حفظ</button></div>
+ </form></div>}
+ </main>
 }
