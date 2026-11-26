@@ -1,4 +1,5 @@
 "use client";
+import { AccountPanel } from "./account-panel";
 
 import { useEffect, useMemo, useState } from "react";
 import { Search, ShoppingBag, Heart, UserRound, Menu, X, ChevronLeft, ChevronRight, Star, ArrowUpLeft, Truck, ShieldCheck, Headphones, Zap, Plus, Minus, Trash2, SlidersHorizontal, Sparkles, PackageCheck } from "lucide-react";
