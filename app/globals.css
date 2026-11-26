@@ -573,3 +573,66 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .hero-reflection{display:block;width:100%;height:92px;object-fit:cover;object-position:center 72%;transform:scaleY(-1);opacity:.28;filter:saturate(.82) blur(.4px);pointer-events:none;margin:0 0 -48px;border-radius:0 0 20px 20px;-webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,.48),transparent 96%);mask-image:linear-gradient(to bottom,rgba(0,0,0,.48),transparent 96%)}
 @media(max-width:640px){.hero-reflection{height:58px;margin-bottom:-30px;opacity:.22}}
 @media(prefers-reduced-motion:reduce){.hero-banner-image{animation:none}}
+
+
+/* Obaid Store — restrained editorial motion polish */
+.storefront-root #home .hero-banner-image{
+  animation: obaid-hero-arrive 900ms cubic-bezier(.2,.72,.22,1) both;
+  transform-origin:center;
+}
+.storefront-root #home .hero-reflection{
+  animation: obaid-reflection-arrive 900ms ease-out both;
+}
+.storefront-root #home h1,
+.storefront-root #home p,
+.storefront-root #home .hero-eyebrow,
+.storefront-root #home a{
+  animation: obaid-copy-arrive 620ms cubic-bezier(.2,.72,.22,1) both;
+}
+.storefront-root #home p{animation-delay:70ms}
+.storefront-root #home a{animation-delay:120ms}
+.storefront-root #categories button,
+.storefront-root #products article{
+  transition:
+    transform 260ms cubic-bezier(.2,.72,.22,1),
+    box-shadow 260ms ease,
+    border-color 220ms ease;
+}
+.storefront-root #categories button:focus-visible,
+.storefront-root #products article:focus-within{
+  outline:2px solid #5681ee;
+  outline-offset:3px;
+}
+.storefront-root #products article img{
+  transition:transform 520ms cubic-bezier(.2,.72,.22,1);
+}
+.storefront-root #products article:hover img{
+  transform:scale(1.035);
+}
+.storefront-root header{
+  transition:box-shadow 240ms ease,background-color 240ms ease;
+}
+@keyframes obaid-hero-arrive{
+  from{opacity:.58;transform:scale(1.035)}
+  to{opacity:1;transform:scale(1)}
+}
+@keyframes obaid-reflection-arrive{
+  from{opacity:0}
+  to{opacity:.25}
+}
+@keyframes obaid-copy-arrive{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@media(prefers-reduced-motion:reduce){
+  .storefront-root #home .hero-banner-image,
+  .storefront-root #home .hero-reflection,
+  .storefront-root #home h1,
+  .storefront-root #home p,
+  .storefront-root #home .hero-eyebrow,
+  .storefront-root #home a{animation:none!important}
+  .storefront-root #categories button,
+  .storefront-root #products article,
+  .storefront-root #products article img,
+  .storefront-root header{transition:none!important}
+}
