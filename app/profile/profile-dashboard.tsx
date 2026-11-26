@@ -86,7 +86,7 @@ export default function ProfileDashboard() {
     });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!alive) return;
-      if (!session?.user) { setUser(null); setProfile(emptyProfile); setOrders([]); }
+      if (!session?.user) { setUser(null); setProfile(emptyProfile); setOrders([]); setAddresses([]); setFavorites([]); }
       else { void load(session.user).catch(e => setError(e instanceof Error ? e.message : "تعذر تحديث الحساب")); }
     });
     return () => { alive = false; listener.subscription.unsubscribe(); };
