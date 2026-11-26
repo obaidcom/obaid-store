@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AuthPage } from "@/components/auth-pages";
 import { useEffect, useMemo, useState, type FormEvent, type ChangeEvent } from "react";
 import {
   ArrowRight, UserRound, Package, MapPin, Heart, FileText, ShieldCheck,
@@ -46,7 +47,7 @@ export default function ProfileDashboard() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
-    if (!configured) { window.location.replace("/account"); return; }
+    if (!configured) { setLoading(false); return; }
     const supabase = getSupabase();
     let alive = true;
     const load = async (u: User) => {
@@ -81,9 +82,6 @@ export default function ProfileDashboard() {
       if (sessionError) setError(sessionError.message);
       if (data.session?.user) {
         try { await load(data.session.user); } catch (e) { setError(e instanceof Error ? e.message : "تعذر تحميل بيانات الحساب"); }
-      } else {
-        window.location.replace("/account");
-        return;
       }
       setLoading(false);
     });
@@ -184,7 +182,7 @@ export default function ProfileDashboard() {
 
   if (loading) return <main dir="rtl" className="min-h-screen bg-[#f3f6fc] p-8 text-center text-slate-600">جارٍ تحميل حسابك...</main>;
 
-  if (!configured || !user) return null;
+  if (!configured || !user) return <AuthPage />;
 
   return (
     <main dir="rtl" className="min-h-screen bg-[#f3f6fc] pb-12 text-slate-800">
