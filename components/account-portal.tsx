@@ -49,11 +49,29 @@ export function AccountPortal() {
       });
       if (signUpError) throw signUpError;
       setEmail(normalizedEmail);
+      setOtp("");
       setView("verify");
       setNotice("أرسلنا رمز التحقق إلى بريدك الإلكتروني. أدخل الرمز المكوّن من 6 أرقام لإكمال إنشاء الحساب.");
     } catch (err) {
       const message = err instanceof Error ? err.message : "تعذر إنشاء الحساب.";
       setError(message.toLowerCase().includes("already registered") ? "هذا البريد مسجل مسبقاً. اختر تسجيل الدخول." : message);
+    } finally { setBusy(false); }
+  };
+
+  const resendCode = async () => {
+    clearMessages(); setBusy(true);
+    const supabase = getSupabase();
+    if (!supabase) { setError("تعذر الاتصال بإعدادات المتجر."); setBusy(false); return; }
+    try {
+      const {error:resendError} = await supabase.auth.resend({
+        type: "signup",
+        email: email.trim().toLowerCase()
+      });
+      if (resendError) throw resendError;
+      setOtp("");
+      setNotice("تمت إعادة إرسال رمز التحقق إلى بريدك الإلكتروني. استخدم أحدث رمز وصلك.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "تعذرت إعادة إرسال رمز التحقق. حاول بعد قليل.");
     } finally { setBusy(false); }
   };
 
@@ -128,6 +146,7 @@ export function AccountPortal() {
             <div className="rounded-xl bg-blue-50 p-4 text-center text-sm text-blue-800"><Mail className="mx-auto mb-2" size={22}/><b>{email}</b><p className="mt-1 text-xs">أدخل رمز التحقق المكوّن من ستة أرقام.</p></div>
             <label className="grid gap-2 text-sm font-bold">رمز التحقق<input dir="ltr" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required value={otp} onChange={e=>setOtp(e.target.value.replace(/\D/g,"").slice(0,6))} placeholder="000000" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-center text-2xl font-black tracking-[.55em] outline-none focus:border-blue-500"/></label>
             <button disabled={busy||otp.length!==6} className="flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-4 font-extrabold text-white disabled:opacity-60">{busy?<LoaderCircle className="animate-spin" size={18}/>:<ShieldCheck size={18}/>} تأكيد الحساب</button>
+            <button type="button" disabled={busy} onClick={resendCode} className="text-sm font-extrabold text-blue-700 disabled:opacity-50">إعادة إرسال رمز التحقق</button>
             <button type="button" onClick={()=>{clearMessages();setView("signup");}} className="text-sm font-bold text-slate-500">تعديل بيانات التسجيل</button>
           </form>}
           {view==="login" && <form onSubmit={login} className="grid gap-4">
