@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { AuthPage } from "@/components/auth-pages";
 import { useEffect, useMemo, useState, type FormEvent, type ChangeEvent } from "react";
 import {
   ArrowRight, UserRound, Package, MapPin, Heart, FileText, ShieldCheck,
@@ -182,7 +181,26 @@ export default function ProfileDashboard() {
 
   if (loading) return <main dir="rtl" className="min-h-screen bg-[#f3f6fc] p-8 text-center text-slate-600">جارٍ تحميل حسابك...</main>;
 
-  if (!configured || !user) return <AuthPage />;
+  if (!configured || !user) return (
+    <main dir="rtl" className="flex min-h-screen items-start justify-center bg-gradient-to-br from-[#eaf2ff] via-[#f5f8ff] to-[#e9f1ff] px-4 py-16 sm:items-center sm:py-10">
+      <section className="w-full max-w-[470px] overflow-hidden rounded-[26px] border border-white/80 bg-white shadow-[0_24px_70px_rgba(27,65,125,0.14)]">
+        <header className="bg-gradient-to-l from-[#10264b] via-[#164b91] to-[#2878d0] px-6 py-8 text-center text-white sm:px-8 sm:py-9">
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-white/20 bg-white/10 shadow-inner"><ShoppingBag size={27} /></div>
+          <p className="mt-3 text-[10px] font-black tracking-[0.24em] text-blue-100">OBAID STORE</p>
+          <h1 className="mt-2 text-xl font-black sm:text-2xl">مرحباً بك في متجر عبيد</h1>
+          <p className="mx-auto mt-3 max-w-sm text-xs leading-6 text-blue-100/90">يسعدنا وجودك معنا. سجّل حسابك لتتابع مشترياتك وتدير كل تفاصيل التسوق من مكان واحد.</p>
+        </header>
+        <div className="space-y-4 px-5 py-6 sm:px-7 sm:py-7">
+          <div className="grid grid-cols-2 gap-2">
+            <Link href="/account" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-blue-100 bg-[#f0f6ff] px-3 py-3 text-sm font-bold text-[#244b82] shadow-sm transition hover:bg-blue-50"><LockKeyhole size={15}/> تسجيل الدخول</Link>
+            <Link href="/account?mode=signup" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-blue-700 px-3 py-3 text-sm font-bold text-white shadow-md shadow-blue-200 transition hover:bg-blue-800"><UserRound size={15}/> إنشاء حساب جديد</Link>
+          </div>
+          <Link href="/" className="block text-center text-xs font-bold text-slate-500 transition hover:text-blue-700">العودة إلى التسوق</Link>
+          <p className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400"><ShieldCheck size={12}/> نحمي بياناتك ونحافظ على خصوصية حسابك الشخصي</p>
+        </div>
+      </section>
+    </main>
+  );
 
   return (
     <main dir="rtl" className="min-h-screen bg-[#f3f6fc] pb-12 text-slate-800">
