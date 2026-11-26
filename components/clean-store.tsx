@@ -68,13 +68,46 @@ export function CleanStore() {
  useEffect(()=>{let cancelled=false;const loadCatalog=async()=>{if(!hasSupabaseConfig()){setCatalogLoading(false);return;}try{const {data,error}=await getSupabase().from("products").select("id,slug,name,description,price,compare_at_price,image_url,is_featured,stock_quantity,categories(name),product_images(image_url,sort_order)").eq("is_active",true).order("created_at",{ascending:true});if(error)throw error;if(!data?.length)throw new Error("لم تُضف منتجات إلى قاعدة البيانات بعد.");const known:Record<string,number>={"wireless-headphones":1,"smart-sport-watch":2,"everyday-bag":3,"modern-desk-lamp":4,"comfortable-sneakers":5,"instant-camera":6,"travel-thermal-cup":7,"classic-sunglasses":8};const mapped:Product[]=data.map((row:any)=>{const slug=String(row.slug||"");const dbId=String(row.id);const displayId=known[slug]??Number.parseInt(dbId.replace(/-/g,"").slice(0,7),16);const categoryRow=Array.isArray(row.categories)?row.categories[0]:row.categories;const imgs=Array.isArray(row.product_images)?row.product_images.slice().sort((a:any,b:any)=>a.sort_order-b.sort_order).map((x:any)=>x.image_url).filter(Boolean):[];return {id:displayId,dbId,slug,name:String(row.name),category:String(categoryRow?.name||"أخرى"),price:Number(row.price)||0,oldPrice:row.compare_at_price==null?undefined:Number(row.compare_at_price),image:String(row.image_url||imgs[0]||""),badge:row.is_featured?"الأكثر مبيعاً":undefined,description:String(row.description||""),gallery:imgs,stock:Number(row.stock_quantity)||0};});if(!cancelled)setProducts(mapped);}catch(err){if(!cancelled)setNotice(err instanceof Error?"تعذر تحميل المنتجات من قاعدة البيانات: "+err.message:"تعذر تحميل المنتجات");}finally{if(!cancelled)setCatalogLoading(false);}};void loadCatalog();return()=>{cancelled=true;}},[]);
  useEffect(()=>{try{const savedCart=localStorage.getItem("obaid-store-cart");const savedFavorites=localStorage.getItem("obaid-store-favorites");const savedTheme=localStorage.getItem("obaid-store-theme");if(savedCart)setCart(JSON.parse(savedCart));if(savedFavorites)setFavorites(JSON.parse(savedFavorites));const savedProfile=localStorage.getItem("obaid-store-profile");const savedAvatar=localStorage.getItem("obaid-store-avatar");if(savedAvatar)setAvatar(savedAvatar);if(savedProfile){const parsed=JSON.parse(savedProfile);setProfile(parsed);setCheckout(v=>({...v,name:parsed.name||"",phone:parsed.phone||"",governorate:parsed.governorate||"دمشق",address:parsed.address||""}))}if(savedTheme==="light"||savedTheme==="dark")setTheme(savedTheme)}catch{}finally{setPreferencesLoaded(true)}},[]);
  useEffect(()=>{if(!preferencesLoaded)return;try{localStorage.setItem("obaid-store-cart",JSON.stringify(cart));localStorage.setItem("obaid-store-favorites",JSON.stringify(favorites));localStorage.setItem("obaid-store-theme",theme);localStorage.setItem("obaid-store-orders",JSON.stringify(orders));localStorage.setItem("obaid-store-profile",JSON.stringify(profile))}catch{}},[cart,favorites,theme,preferencesLoaded,orders,profile]);
+ useEffect(()=>{
+  if(!preferencesLoaded||!hasSupabaseConfig()||!products.length)return;
+  let active=true;
+  const syncFavorites=async()=>{
+   const {data:{user}}=await getSupabase().auth.getUser();
+   if(!user)return;
+   const {data:rows,error}=await getSupabase().from("favorites").select("product_id").eq("user_id",user.id);
+   if(error)throw error;
+   if(!active)return;
+   const idByDatabaseId=new Map(products.filter(p=>p.dbId).map(p=>[p.dbId as string,p.id]));
+   setFavorites((rows||[]).map((row:any)=>idByDatabaseId.get(String(row.product_id))).filter((id):id is number=>typeof id==="number"));
+  };
+  void syncFavorites().catch(()=>{});
+  return()=>{active=false;};
+ },[preferencesLoaded,products]);
  const visible = useMemo(()=>{let list=products.filter(p=>(category==="الكل"||p.category===category)&&p.name.toLocaleLowerCase("ar").includes(query.trim().toLocaleLowerCase("ar"))&&(!favoritesOnly||favorites.includes(p.id)));if(sortBy==="price-low")list.sort((a,b)=>a.price-b.price);if(sortBy==="price-high")list.sort((a,b)=>b.price-a.price);if(sortBy==="name")list.sort((a,b)=>a.name.localeCompare(b.name,"ar"));return list},[category,query,favoritesOnly,favorites,sortBy]);
  const cartItems = products.filter(p=>cart[p.id]);
  const count = Object.values(cart).reduce((a,b)=>a+b,0);
  const total = cartItems.reduce((sum,p)=>sum+p.price*cart[p.id],0);
  const add = (id:number, quantity=1) => {setCart(c=>({...c,[id]:(c[id]||0)+quantity}));setNotice("أُضيف "+quantity+" من المنتج إلى سلتك");window.setTimeout(()=>setNotice(""),2200);};
  const openProduct = (product:Product) => {setSelectedProduct(product);setSelectedImageIndex(0);setSelectedQuantity(1);};
- const toggleFavorite = (id:number) => setFavorites(f=>f.includes(id)?f.filter(x=>x!==id):[...f,id]);
+ const toggleFavorite = async (id:number) => {
+  const wasSaved=favorites.includes(id);
+  const product=products.find(p=>p.id===id);
+  setFavorites(current=>wasSaved?current.filter(x=>x!==id):[...current,id]);
+  if(!hasSupabaseConfig()||!product?.dbId)return;
+  try{
+   const {data:{user}}=await getSupabase().auth.getUser();
+   if(!user)return;
+   const query=getSupabase().from("favorites");
+   const result=wasSaved
+    ? await query.delete().eq("user_id",user.id).eq("product_id",product.dbId)
+    : await query.insert({user_id:user.id,product_id:product.dbId});
+   if(result.error)throw result.error;
+  }catch{
+   setFavorites(current=>wasSaved?[...current,id]:current.filter(x=>x!==id));
+   setNotice("تعذرت مزامنة المفضلة مع الحساب. حاول مجدداً.");
+   window.setTimeout(()=>setNotice(""),2600);
+  }
+ };
  const scrollProducts = () => window.setTimeout(()=>document.getElementById("products")?.scrollIntoView({behavior:"smooth",block:"start"}),40);
  const placeDemoOrder = async (e:FormEvent<HTMLFormElement>) => {e.preventDefault();if(!cartItems.length){setNotice("السلة فارغة");return;}if(!hasSupabaseConfig()){setNotice("الاتصال بقاعدة البيانات غير مهيأ؛ لم يتم إرسال الطلب.");return;}if(cartItems.some(p=>!p.dbId)){setNotice("تعذر مطابقة أحد المنتجات مع قاعدة البيانات. حدّث الصفحة وحاول مجدداً.");return;}setOrderBusy(true);setNotice("");try{const {data,error}=await getSupabase().rpc("place_store_order",{p_customer_name:checkout.name,p_customer_phone:checkout.phone,p_customer_email:profile.email||null,p_governorate:checkout.governorate,p_address:checkout.address,p_notes:checkout.notes,p_payment_method:paymentMethod,p_items:cartItems.map(p=>({product_id:p.dbId,quantity:cart[p.id]}))});if(error)throw error;const result=data as {id:string;order_number:string;tracking_code:string;total:number;status:string};const paymentLabel=paymentMethod==="sham-cash"?"شام كاش":paymentMethod==="syriatel-cash"?"سيريتل كاش":"الدفع عند الاستلام";const order={id:result.tracking_code,date:new Date().toISOString(),items:cartItems.map(p=>({id:p.id,quantity:cart[p.id]})),total:Number(result.total),payment:paymentLabel,status:"تم استلام الطلب",name:checkout.name,phone:checkout.phone,address:checkout.governorate+" - "+checkout.address};setOrders(o=>[order,...o]);setProfile(p=>({...p,name:checkout.name,phone:checkout.phone,governorate:checkout.governorate,address:checkout.address}));setCart({});setTrackingCode(result.tracking_code);setDrawer("tracking");setNotice("تم حفظ طلبك في قاعدة البيانات. رقم الطلب: "+result.order_number+" — رمز التتبع: "+result.tracking_code);}catch(err){setNotice(err instanceof Error?"لم يتم إنشاء الطلب: "+err.message:"تعذر إنشاء الطلب. لم يتم خصم أي مبلغ.");}finally{setOrderBusy(false);}};
  const selectCategory = (name:string) => {
